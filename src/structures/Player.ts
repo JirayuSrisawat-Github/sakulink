@@ -256,7 +256,7 @@ export class Player {
 	 * @param {string} [node] - The ID of the node to move to.
 	 * @returns {this} - The player instance.
 	 */
-	public async moveNode(node: string): Promise<this> {
+	public async moveNode(node?: string): Promise<this> {
 		node = node || this.manager.leastLoadNodes.first().options.identifier;
 		if (!this.manager.nodes.has(node)) throw new RangeError("No nodes available.");
 		if (this.node.options.identifier === node) return this;

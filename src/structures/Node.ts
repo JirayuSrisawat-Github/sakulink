@@ -241,6 +241,13 @@ export class Node {
 
 		// If the close code is not 1000 (normal closure) or the reason is not "destroy", attempt to reconnect
 		if (code !== 1000 || reason !== "destroy") this.reconnect();
+
+		// Move all players connected to this node to another node
+		this.manager.players
+			.filter((p) => p.node.options.identifier == this.options.identifier)
+			.forEach((p) => {
+				p.moveNode();
+			});
 	}
 
 	/**
