@@ -3,10 +3,12 @@ import {
   PlayerEvent,
   PlayerEvents,
   Structure,
+  TrackData,
   TrackEndEvent,
   TrackExceptionEvent,
   TrackStartEvent,
   TrackStuckEvent,
+  TrackUtils,
   WebSocketClosedEvent,
 } from "./Utils";
 import { Manager } from "./Manager";
@@ -268,7 +270,7 @@ export class Node {
    * Event handler for incoming WebSocket messages.
    * @param d - The message data.
    */
-  protected message(d: Buffer | string): void {
+  protected async message(d: Buffer | string): Promise<void> {
     // Convert the data to a Buffer if necessary
     if (Array.isArray(d)) d = Buffer.concat(d);
     else if (d instanceof ArrayBuffer) d = Buffer.from(d);
@@ -301,11 +303,38 @@ export class Node {
         // Set the session ID and resume the session if necessary
         this.rest.setSessionId(payload.sessionId);
         this.sessionId = payload.sessionId;
+        this.manager.db.set(`sessionId.${this.options.identifier ?? this.options.host.replace(/\./g, "-")}`, this.sessionId);
+        
         if (!this.options.resumeStatus) return;
-        this.rest.patch(`/v4/sessions/${this.sessionId}`, {
-          resuming: this.options.resumeStatus,
-          timeout: this.options.resumeTimeout,
-        });
+				this.rest.patch(`/v4/sessions/${this.sessionId}`, {
+					resuming: this.options.resumeStatus,
+					timeout: this.options.resumeTimeout,
+				});
+
+				const resumedPlayers = <any[]>await this.rest.getAllPlayers();
+				for (const resumedPlayer of resumedPlayers) {
+					const previousInfosPlayer: any = this.manager.db.get(`players.${resumedPlayer.guildId}`) || {};
+					const player = this.manager.create({
+						guild: previousInfosPlayer.guild,
+						voiceChannel: previousInfosPlayer.voiceChannel,
+						textChannel: previousInfosPlayer.textChannel,
+						volume: previousInfosPlayer.volume,
+						selfDeafen: previousInfosPlayer.selfDeafen,
+						selfMute: previousInfosPlayer.selfMute,
+						data: {},
+					});
+
+					if (player.state !== "CONNECTED") player.connect();
+
+					console.log(previousInfosPlayer);
+					const track = await this.manager.decodeTrack(previousInfosPlayer.current.track);
+					player.queue.add(TrackUtils.build(track));
+
+					if (!player.playing) await player.play();
+					player.seek(resumedPlayer.state.position);
+
+					previousInfosPlayer.queue.map(async (queue: TrackData) => player.queue.add(TrackUtils.build(queue)));
+        }
         break;
       default:
         // Emit an error if the payload has an unknown operation code

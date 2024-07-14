@@ -18,6 +18,7 @@ import { Node, NodeOptions } from "./Node";
 import { Player, PlayerOptions, Track, UnresolvedTrack } from "./Player";
 import { VoiceState } from "..";
 import ManagerCheck from "../utils/ManagerCheck";
+import { Database } from "../utils/Database";
 
 /**
  * The list of keys that are required in all events.
@@ -38,7 +39,6 @@ export const REQUIRED_PAYLOAD_KEYS = REQUIRED_KEYS;
  * @interface Manager
  */
 export interface Manager {
-
   /**
    * Adds an event listener for the "nodeCreate" event.
    *
@@ -84,7 +84,7 @@ export interface Manager {
    */
   on(
     event: "nodeDisconnect",
-    listener: (node: Node, reason: { code?: number; reason?: string }) => void,
+    listener: (node: Node, reason: { code?: number; reason?: string }) => void
   ): this;
 
   /**
@@ -132,7 +132,11 @@ export interface Manager {
    */
   on(
     event: "queueEnd",
-    listener: (player: Player, track: Track | UnresolvedTrack, payload: TrackEndEvent) => void,
+    listener: (
+      player: Player,
+      track: Track | UnresolvedTrack,
+      payload: TrackEndEvent
+    ) => void
   ): this;
 
   /**
@@ -144,7 +148,7 @@ export interface Manager {
    */
   on(
     event: "playerMove",
-    listener: (player: Player, initChannel: string, newChannel: string) => void,
+    listener: (player: Player, initChannel: string, newChannel: string) => void
   ): this;
 
   /**
@@ -156,7 +160,7 @@ export interface Manager {
    */
   on(
     event: "playerDisconnect",
-    listener: (player: Player, oldChannel: string) => void,
+    listener: (player: Player, oldChannel: string) => void
   ): this;
 
   /**
@@ -166,7 +170,10 @@ export interface Manager {
    * @param {(player: Player, track: Track, payload: TrackStartEvent) => void} listener - The function to be called when the event is emitted.
    * @return {this} The Manager instance.
    */
-  on(event: "trackStart", listener: (player: Player, track: Track, payload: TrackStartEvent) => void): this;
+  on(
+    event: "trackStart",
+    listener: (player: Player, track: Track, payload: TrackStartEvent) => void
+  ): this;
 
   /**
    * Adds an event listener for the "trackEnd" event.
@@ -175,7 +182,10 @@ export interface Manager {
    * @param {(player: Player, track: Track, payload: TrackEndEvent) => void} listener - The function to be called when the event is emitted.
    * @return {this} The Manager instance.
    */
-  on(event: "trackEnd", listener: (player: Player, track: Track, payload: TrackEndEvent) => void): this;
+  on(
+    event: "trackEnd",
+    listener: (player: Player, track: Track, payload: TrackEndEvent) => void
+  ): this;
 
   /**
    * Adds an event listener for the "trackStuck" event.
@@ -186,7 +196,7 @@ export interface Manager {
    */
   on(
     event: "trackStuck",
-    listener: (player: Player, track: Track, payload: TrackStuckEvent) => void,
+    listener: (player: Player, track: Track, payload: TrackStuckEvent) => void
   ): this;
 
   /**
@@ -198,7 +208,11 @@ export interface Manager {
    */
   on(
     event: "trackError",
-    listener: (player: Player, track: Track | UnresolvedTrack, payload: TrackExceptionEvent) => void,
+    listener: (
+      player: Player,
+      track: Track | UnresolvedTrack,
+      payload: TrackExceptionEvent
+    ) => void
   ): this;
 
   /**
@@ -208,7 +222,10 @@ export interface Manager {
    * @param {(player: Player, payload: WebSocketClosedEvent) => void} listener - The function to be called when the event is emitted.
    * @return {this} The Manager instance.
    */
-  on(event: "socketClosed", listener: (player: Player, payload: WebSocketClosedEvent) => void): this;
+  on(
+    event: "socketClosed",
+    listener: (player: Player, payload: WebSocketClosedEvent) => void
+  ): this;
 }
 
 /**
@@ -245,6 +262,11 @@ export class Manager extends EventEmitter {
    * The options of the manager.
    */
   public readonly options: ManagerOptions;
+
+  /**
+   * Datastore instance
+   */
+  public db: Database = null;
 
   /**
    * Indicates whether the manager is initiated or not.
@@ -304,20 +326,24 @@ export class Manager extends EventEmitter {
       plugins: [],
       nodes: [],
       autoPlay: true,
-      clientName: "Sakura/Lavalink",
+      clientName: "sakulink",
       defaultSearchPlatform: "youtube music",
       ...options,
     };
 
     if (this.options.plugins) {
       for (const [index, plugin] of this.options.plugins.entries()) {
-        if (!(plugin instanceof Plugin)) throw new RangeError(`Plugin at index ${index} does not extend Plugin.`);
+        if (!(plugin instanceof Plugin))
+          throw new RangeError(
+            `Plugin at index ${index} does not extend Plugin.`
+          );
         plugin.load(this);
       }
     }
 
     if (this.options.nodes) {
-      for (const nodeOptions of this.options.nodes) new (Structure.get("Node"))(nodeOptions);
+      for (const nodeOptions of this.options.nodes)
+        new (Structure.get("Node"))(nodeOptions);
     }
   }
 
@@ -332,12 +358,15 @@ export class Manager extends EventEmitter {
 
     if (typeof clientId !== "undefined") this.options.clientId = clientId;
 
-    if (typeof this.options.clientId !== "string") throw new Error('"clientId" set is not type of "string"');
+    if (typeof this.options.clientId !== "string")
+      throw new Error('"clientId" set is not type of "string"');
 
     if (!this.options.clientId)
       throw new Error(
-        '"clientId" is not set. Pass it in Manager#init() or as a option in the constructor.',
+        '"clientId" is not set. Pass it in Manager#init() or as a option in the constructor.'
       );
+
+    this.db = new Database(this.options.clientId);
 
     for (const node of this.nodes.values()) {
       try {
@@ -361,7 +390,7 @@ export class Manager extends EventEmitter {
    */
   public async search(
     query: string | SearchQuery,
-    requester?: unknown,
+    requester?: unknown
   ): Promise<SearchResult> {
     // Get the first available node with search enabled
     const node =
@@ -377,20 +406,19 @@ export class Manager extends EventEmitter {
     // Construct the search query
     const _query: SearchQuery = typeof query === "string" ? { query } : query;
     const _source =
-    Manager.DEFAULT_SOURCES[_query.source ?? this.options.defaultSearchPlatform] ??
-      _query.source;
+      Manager.DEFAULT_SOURCES[
+        _query.source ?? this.options.defaultSearchPlatform
+      ] ?? _query.source;
 
     let search = _query.query;
 
     // Prepend the search source to the query if it is not a URL
-    if (!/^https?:\/\//.test(search))
-      search = `${_source}:${search}`;
-    
+    if (!/^https?:\/\//.test(search)) search = `${_source}:${search}`;
 
     try {
       // Send a GET request to the node's REST API to search for tracks
       const res = (await node.rest.get(
-        `/v4/loadtracks?identifier=${encodeURIComponent(search)}`,
+        `/v4/loadtracks?identifier=${encodeURIComponent(search)}`
       )) as LavalinkResponse;
 
       if (!res) {
@@ -416,7 +444,7 @@ export class Manager extends EventEmitter {
 
       // Build the tracks from the search data
       const tracks = searchData.map((track) =>
-        TrackUtils.build(track, requester),
+        TrackUtils.build(track, requester)
       );
 
       // Build the playlist from the playlist data
@@ -425,11 +453,11 @@ export class Manager extends EventEmitter {
           ? {
               name: playlistData!.info.name,
               tracks: playlistData!.tracks.map((track) =>
-                TrackUtils.build(track, requester),
+                TrackUtils.build(track, requester)
               ),
               duration: playlistData!.tracks.reduce(
                 (acc, cur) => acc + (cur.info.length || 0),
-                0,
+                0
               ),
 
               url: playlistData!.pluginInfo.url,
@@ -442,7 +470,7 @@ export class Manager extends EventEmitter {
         tracks:
           tracks ||
           playlistData!.tracks.map((track) =>
-            TrackUtils.build(track, requester),
+            TrackUtils.build(track, requester)
           ),
         playlist,
       };
@@ -554,16 +582,18 @@ export class Manager extends EventEmitter {
    * @param {VoicePacket | VoiceServer | VoiceState} data - The voice state data.
    * @return {Promise<void>} A promise that resolves when the voice state is updated.
    */
-  public async updateVoiceState(data: VoicePacket | VoiceServer | VoiceState): Promise<void> {
+  public async updateVoiceState(
+    data: VoicePacket | VoiceServer | VoiceState
+  ): Promise<void> {
     const voiceState = "d" in data ? data.d : data;
-    if (!voiceState || !("token" in voiceState) && !("session_id" in voiceState)) 
+    if (
+      !voiceState ||
+      (!("token" in voiceState) && !("session_id" in voiceState))
+    )
       return;
-    
 
     const player = this.players.get(voiceState.guild_id);
-    if (!player) 
-      return;
-    
+    if (!player) return;
 
     if ("token" in voiceState) {
       player.voiceState.event = voiceState;
@@ -579,14 +609,16 @@ export class Manager extends EventEmitter {
         },
       });
     } else {
-      if (voiceState.user_id !== this.options.clientId)
-        return;
-      
+      if (voiceState.user_id !== this.options.clientId) return;
 
       if (voiceState.channel_id) {
-        if (player.voiceChannel !== voiceState.channel_id) 
-          this.emit("playerMove", player, player.voiceChannel, voiceState.channel_id);
-        
+        if (player.voiceChannel !== voiceState.channel_id)
+          this.emit(
+            "playerMove",
+            player,
+            player.voiceChannel,
+            voiceState.channel_id
+          );
 
         player.voiceState.sessionId = voiceState.session_id;
         player.voiceChannel = voiceState.channel_id;
@@ -779,4 +811,3 @@ export interface PlaylistData {
    */
   url: string;
 }
-

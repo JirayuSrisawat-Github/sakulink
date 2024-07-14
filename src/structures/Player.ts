@@ -88,6 +88,7 @@ export class Player {
   public readonly data: Record<string, unknown> = {};
   private static _manager: Manager;
   private dynamicLoopInterval: NodeJS.Timeout;
+  private interval: NodeJS.Timer;
 
   /**
    * Sets a custom data value for the player.
@@ -139,7 +140,11 @@ export class Player {
     this.manager.players.set(options.guild, this);
     this.manager.emit("playerCreate", this);
     this.setVolume(options.volume ?? 80);
-    this.filters = new Filters(this);}
+    this.filters = new Filters(this);
+    this.save();
+
+    this.interval = setInterval(() => this.save(), 1000 * 60);
+  }
 
   /**
    * Searches for tracks using the specified query.
@@ -148,7 +153,10 @@ export class Player {
    * @param {unknown} [requester] - The requester of the search.
    * @returns {Promise<SearchResult>} - A promise that resolves with the search result.
    */
-  public search(query: string | SearchQuery, requester?: unknown): Promise<SearchResult> {
+  public search(
+    query: string | SearchQuery,
+    requester?: unknown
+  ): Promise<SearchResult> {
     return this.manager.search(query, requester);
   }
 
@@ -215,6 +223,8 @@ export class Player {
     this.node.rest.destroyPlayer(this.guild);
     this.manager.emit("playerDestroy", this);
     this.manager.players.delete(this.guild);
+    // @ts-expect-error
+    clearInterval(this.interval);
   }
 
   /**
@@ -258,7 +268,7 @@ export class Player {
   public setNowPlayingMessage(message: NowPlayingMessage): NowPlayingMessage {
     if (!message) {
       throw new TypeError(
-        "You must provide the message of the now playing message.",
+        "You must provide the message of the now playing message."
       );
     }
     return (this.nowPlayingMessage = message);
@@ -278,7 +288,7 @@ export class Player {
    */
   public async play(
     optionsOrTrack?: PlayOptions | Track | UnresolvedTrack,
-    playOptions?: PlayOptions,
+    playOptions?: PlayOptions
   ): Promise<void> {
     // If a track is provided, set it as the current track in the queue.
     if (
@@ -296,16 +306,16 @@ export class Player {
     const finalOptions = playOptions
       ? playOptions
       : ["startTime", "endTime", "noReplace"].every((v) =>
-            Object.keys(optionsOrTrack || {}).includes(v),
-          )
-        ? (optionsOrTrack as PlayOptions)
-        : {};
+          Object.keys(optionsOrTrack || {}).includes(v)
+        )
+      ? (optionsOrTrack as PlayOptions)
+      : {};
 
     // Resolve the current track if it is an unresolved track.
     if (TrackUtils.isUnresolvedTrack(this.queue.current)) {
       try {
         this.queue.current = await TrackUtils.getClosestTrack(
-          this.queue.current as UnresolvedTrack,
+          this.queue.current as UnresolvedTrack
         );
       } catch (error) {
         // Emit an error event and play the next track if there is one.
@@ -552,6 +562,23 @@ export class Player {
 
     return this;
   }
+
+  /**
+   * Saves the player data to the database.
+   */
+  public save() {
+    this.manager.db.set(`players.${this.guild}`, {
+      guild: this.guild,
+      voiceChannel: this.voiceChannel,
+      textChannel: this.textChannel,
+      volume: this.volume,
+      data: this.data,
+      current: this.queue.current,
+      selfDeafen: this.options.selfDeafen,
+      selfMute: this.options.selfMute,
+      queue: this.queue.map((track) => track),
+    });
+  }
 }
 /**
  * Options for creating a new player.
@@ -751,4 +778,3 @@ export interface NowPlayingMessage {
    */
   delete(): Promise<any>;
 }
-
