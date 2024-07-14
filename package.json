@@ -1,34 +1,36 @@
 {
-  "name": "sakulink",
-  "version": "1.0.3",
-  "description": "NodeJS Lavalink client",
-  "main": "@dist/index.js",
-  "files": ["@dist"],
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+ssh://git@github.com/JirayuSrisawat-Github/sakulink.git"
-  },
-  "keywords": [
-    "performance",
-    "lavalink",
-    "sakulink"
-  ],
-  "author": "JIRAYU SRISAWAT <jirayu.s@jirayu.net>",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/JirayuSrisawat-Github/sakulink/issues"
-  },
-  "homepage": "https://github.com/JirayuSrisawat-Github/sakulink#readme",
-  "devDependencies": {
-    "@types/node": "^20.14.10",
-    "@types/ws": "^8.5.10"
-  },
-  "dependencies": {
-    "@discordjs/collection": "^2.1.0",
-    "axios": "^1.7.2",
-    "lodash": "^4.17.21"
-  }
+	"name": "sakulink",
+	"version": "1.0.5",
+	"description": "NodeJS Lavalink client",
+	"main": "@dist/index.js",
+	"files": [
+		"@dist"
+	],
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+ssh://git@github.com/JirayuSrisawat-Github/sakulink.git"
+	},
+	"keywords": [
+		"performance",
+		"lavalink",
+		"sakulink"
+	],
+	"author": "JIRAYU SRISAWAT <jirayu.s@jirayu.net>",
+	"license": "ISC",
+	"bugs": {
+		"url": "https://github.com/JirayuSrisawat-Github/sakulink/issues"
+	},
+	"homepage": "https://github.com/JirayuSrisawat-Github/sakulink#readme",
+	"devDependencies": {
+		"@types/node": "^20.14.10",
+		"@types/ws": "^8.5.10"
+	},
+	"dependencies": {
+		"@discordjs/collection": "^2.1.0",
+		"axios": "^1.7.2",
+		"lodash": "^4.17.21"
+	}
 }

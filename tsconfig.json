@@ -1,20 +1,20 @@
 {
-  "compilerOptions": {
-    "target": "es2016",
-    "module": "commonjs",
-    "outDir": "@dist",
-    "rootDir": "src",
-    "allowJs": true,
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true,
-    "importHelpers": false,
-    "removeComments": true,
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
-    "strict": false,
-    "skipLibCheck": true,
-    "typeRoots": ["./node_modules/@types/"]
-  },
-  "exclude": ["@dist"]
+	"compilerOptions": {
+		"target": "es2016",
+		"module": "commonjs",
+		"outDir": "@dist",
+		"rootDir": "src",
+		"allowJs": true,
+		"declaration": true,
+		"declarationMap": true,
+		"sourceMap": true,
+		"importHelpers": false,
+		"removeComments": true,
+		"esModuleInterop": true,
+		"forceConsistentCasingInFileNames": true,
+		"strict": false,
+		"skipLibCheck": true,
+		"typeRoots": ["./node_modules/@types/"]
+	},
+	"exclude": ["@dist"]
 }
