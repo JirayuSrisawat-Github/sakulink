@@ -419,7 +419,12 @@ export type State =
   /**
    * The node is being destroyed.
    */
-  | "DESTROYING";
+  | "DESTROYING"
+  /**
+   * The node is moving.
+   */
+  | "MOVING"
+  ;
 
 export type PlayerEvents =
   | TrackStartEvent
