@@ -1,6 +1,6 @@
 {
   "name": "sakulink",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "NodeJS Lavalink client",
   "main": "@dist/index.js",
   "files": ["@dist"],
