@@ -140,7 +140,6 @@ export class Player {
 		this.manager.emit("playerCreate", this);
 		this.setVolume(options.volume ?? 80);
 		this.filters = new Filters(this);
-		this.save();
 
 		this.interval = setInterval(() => this.save(), 1000 * 5);
 	}
@@ -370,6 +369,7 @@ export class Player {
 
 		// Update the player's state and volume.
 		Object.assign(this, { position: 0, playing: true });
+		this.save();
 	}
 
 	/**
@@ -596,16 +596,32 @@ export class Player {
 	 * Saves the player data to the database.
 	 */
 	public save() {
+		const getTrackInfo = (track: Track | UnresolvedTrack) => ({
+			encoded: track.track,
+			info: {
+				identifier: track.identifier,
+				title: track.title,
+				author: track.author,
+				length: track.duration,
+				isSeekable: track.isSeekable,
+				isStream: track.isStream,
+				uri: track.uri,
+				artworkUrl: track.artworkUrl,
+				sourceName: track.sourceName,
+			},
+			pluginInfo: {},
+		});
+
 		this.manager.db.set(`players.${this.guild}`, {
 			guild: this.guild,
 			voiceChannel: this.voiceChannel,
 			textChannel: this.textChannel,
 			volume: this.volume,
 			data: this.data,
-			current: this.queue.current,
 			selfDeafen: this.options.selfDeafen,
 			selfMute: this.options.selfMute,
-			queue: this.queue.map((track) => track),
+			current: this.queue.current ? getTrackInfo(this.queue.current) : null,
+			queue: this.queue.map((track) => getTrackInfo(track)),
 		});
 	}
 }

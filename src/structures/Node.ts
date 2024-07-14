@@ -144,8 +144,8 @@ export class Node {
 			"Client-Name": this.manager.options.clientName,
 		});
 
+		// If resume status is enabled, set the session ID in the headers
 		const sessionId = this.manager.db.get(`sessionId.${this.options.identifier ?? this.options.host.replace(/\./g, "-")}`);
-
 		if (this.options.resumeStatus && sessionId) headers["Session-Id"] = sessionId;
 
 		// Create a new WebSocket connection
@@ -313,9 +313,8 @@ export class Node {
 					});
 
 					if (player.state !== "CONNECTED") player.connect();
-
-					const track = await this.manager.decodeTrack(previousInfosPlayer.current.track);
-					player.queue.add(TrackUtils.build(track));
+					if (!previousInfosPlayer.current) return;
+					player.queue.add(TrackUtils.build(previousInfosPlayer.current));
 
 					if (!player.playing) await player.play();
 					player.seek(resumedPlayer.state.position);

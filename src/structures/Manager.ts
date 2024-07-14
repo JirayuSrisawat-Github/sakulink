@@ -488,6 +488,7 @@ export class Manager extends EventEmitter {
 	 * @return {Promise<void>} A promise that resolves when the voice state is updated.
 	 */
 	public async updateVoiceState(data: VoicePacket | VoiceServer | VoiceState): Promise<void> {
+		if ("t" in data && !["VOICE_STATE_UPDATE", "VOICE_SERVER_UPDATE"].includes(data.t)) return;
 		const voiceState = "d" in data ? data.d : data;
 		if (!voiceState || (!("token" in voiceState) && !("session_id" in voiceState))) return;
 
