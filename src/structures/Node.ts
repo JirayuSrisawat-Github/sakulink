@@ -113,6 +113,7 @@ export class Node {
       retryDelay: 50,
       search: true,
       playable: true,
+      resumeStatus: true,
       ...options,
     };
 
