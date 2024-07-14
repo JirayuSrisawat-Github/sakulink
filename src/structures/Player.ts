@@ -142,7 +142,7 @@ export class Player {
 		this.filters = new Filters(this);
 		this.save();
 
-		this.interval = setInterval(() => this.save(), 1000 * 60);
+		this.interval = setInterval(() => this.save(), 1000 * 5);
 	}
 
 	/**
