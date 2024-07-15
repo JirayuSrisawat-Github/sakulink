@@ -27,6 +27,7 @@ bun add sakulink
 ```
 
 ## Need Help?
+
 Join this [discord server](https://discord.gg/2bhtBJQ4Xz) and create new forum on #help for support.
 
 ## Credits

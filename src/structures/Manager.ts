@@ -372,7 +372,7 @@ export class Manager extends EventEmitter {
 							duration: playlistData!.tracks.reduce((acc, cur) => acc + (cur.info.length || 0), 0),
 
 							url: playlistData!.pluginInfo.url,
-					  }
+						}
 					: null;
 
 			// Construct the search result
@@ -398,8 +398,9 @@ export class Manager extends EventEmitter {
 	public decodeTracks(tracks: string[]): Promise<TrackData[]> {
 		return new Promise(async (resolve, reject) => {
 			// Get the first available node
-			const node = this.nodes.filter((node) => node.connected && node.options.search).size > 0 ? this.nodes.filter((node) => node.connected && node.options.search).first() : this.leastLoadNodes.first();
-			
+			const node =
+				this.nodes.filter((node) => node.connected && node.options.search).size > 0 ? this.nodes.filter((node) => node.connected && node.options.search).first() : this.leastLoadNodes.first();
+
 			if (!node) throw new Error("No available nodes.");
 
 			// Send a POST request to the node's REST API to decode the tracks
