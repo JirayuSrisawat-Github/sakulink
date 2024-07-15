@@ -102,6 +102,7 @@ export class Node {
 			search: true,
 			playable: true,
 			resumeStatus: true,
+			resumeTimeout: 360,
 			...options,
 		};
 
