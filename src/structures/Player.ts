@@ -138,7 +138,7 @@ export class Player {
 		if (!this.node) throw new RangeError("No available nodes.");
 		this.manager.players.set(options.guild, this);
 		this.manager.emit("playerCreate", this);
-		this.setVolume(options.volume ?? 80);
+		this.volume = options.volume ?? 80;
 		this.filters = new Filters(this);
 
 		this.interval = setInterval(() => this.save(), 1000 * 5);
@@ -369,6 +369,7 @@ export class Player {
 			guildId: this.guild,
 			data: {
 				encodedTrack: this.queue.current?.track,
+				volume: this.volume,
 				...finalOptions,
 			},
 		});
