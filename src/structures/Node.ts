@@ -101,8 +101,6 @@ export class Node {
 			retryDelay: 50,
 			search: true,
 			playable: true,
-			resumeStatus: true,
-			resumeTimeout: 360,
 			...options,
 		};
 
@@ -147,7 +145,7 @@ export class Node {
 
 		// If resume status is enabled, set the session ID in the headers
 		const sessionId = this.manager.db.get(`sessionId.${this.options.identifier ?? this.options.host.replace(/\./g, "-")}`);
-		if (this.options.resumeStatus && sessionId) headers["Session-Id"] = sessionId;
+		if (this.manager.options.autoResume && sessionId) headers["Session-Id"] = sessionId;
 
 		// Create a new WebSocket connection
 		this.socket = new WebSocket(`ws${this.options.secure ? "s" : ""}://${this.address}/v4/websocket`, { headers });
@@ -247,6 +245,7 @@ export class Node {
 		this.manager.players
 			.filter((p) => p.node.options.identifier === this.options.identifier)
 			.forEach((p) => {
+				if (!this.manager.options.autoMove) return (p.playing = false);
 				p.moveNode();
 			});
 	}
@@ -301,11 +300,11 @@ export class Node {
 				this.sessionId = payload.sessionId;
 				this.manager.db.set(`sessionId.${this.options.identifier ?? this.options.host.replace(/\./g, "-")}`, this.sessionId);
 
-				if (!this.options.resumeStatus) return;
+				if (!this.manager.options.autoResume) return;
 
 				this.rest.patch(`/v4/sessions/${this.sessionId}`, {
-					resuming: this.options.resumeStatus,
-					timeout: this.options.resumeTimeout,
+					resuming: true,
+					timeout: 360,
 				});
 
 				const resumedPlayers = <any[]>await this.rest.getAllPlayers();
@@ -539,16 +538,6 @@ export interface NodeOptions {
 	 * The delay between retrying connections to the Node.
 	 */
 	retryDelay?: number;
-
-	/**
-	 * Whether to send resume status updates to the Node.
-	 */
-	resumeStatus?: boolean;
-
-	/**
-	 * The timeout for resuming sessions.
-	 */
-	resumeTimeout?: number;
 
 	/**
 	 * The timeout for WebSocket requests.

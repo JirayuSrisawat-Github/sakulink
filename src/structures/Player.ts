@@ -603,6 +603,8 @@ export class Player {
 	 * Saves the player data to the database.
 	 */
 	public save() {
+		if (!this.manager.options.autoResume) return;
+
 		this.manager.db.set(`players.${this.guild}`, {
 			guild: this.guild,
 			voiceChannel: this.voiceChannel,

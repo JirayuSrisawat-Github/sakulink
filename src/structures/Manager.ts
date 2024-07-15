@@ -268,6 +268,8 @@ export class Manager extends EventEmitter {
 			autoPlay: true,
 			clientName: "sakulink",
 			defaultSearchPlatform: "youtube music",
+			autoMove: true,
+			autoResume: true,
 			...options,
 		};
 
@@ -372,7 +374,7 @@ export class Manager extends EventEmitter {
 							duration: playlistData!.tracks.reduce((acc, cur) => acc + (cur.info.length || 0), 0),
 
 							url: playlistData!.pluginInfo.url,
-						}
+					  }
 					: null;
 
 			// Construct the search result
@@ -595,6 +597,14 @@ export interface ManagerOptions {
 	 * The default search platform.
 	 */
 	defaultSearchPlatform?: SearchPlatform;
+	/**
+	 * Move players to other node if node going down.
+	 */
+	autoMove?: boolean;
+	/**
+	 * Automatically resume players.
+	 */
+	autoResume?: boolean;
 	/**
 	 * The function to send payloads to the Lavalink server.
 	 * @param id - The ID of the server.
