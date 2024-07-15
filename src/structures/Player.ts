@@ -271,14 +271,18 @@ export class Player {
 
 		const currentNode = this.node;
 		const destinationNode = this.manager.nodes.get(node);
+		let position = this.position;
 
-		const fetchedPlayer: any = await currentNode.rest.get(`/v4/sessions/${currentNode.sessionId}/players/${this.guild}`);
-		if (!fetchedPlayer) return this;
+		if (currentNode.connected) {
+			const fetchedPlayer: any = await currentNode.rest.get(`/v4/sessions/${currentNode.sessionId}/players/${this.guild}`);
+			position = fetchedPlayer.track.info.position;
+		}
+
 		await destinationNode.rest.updatePlayer({
 			guildId: this.guild,
 			data: {
 				encodedTrack: this.queue.current?.track,
-				position: fetchedPlayer.track.info.position,
+				position: position,
 				volume: this.volume,
 				paused: this.paused,
 				filters: {
@@ -598,22 +602,6 @@ export class Player {
 	 * Saves the player data to the database.
 	 */
 	public save() {
-		const getTrackInfo = (track: Track | UnresolvedTrack) => ({
-			encoded: track.track,
-			info: {
-				identifier: track.identifier,
-				title: track.title,
-				author: track.author,
-				length: track.duration,
-				isSeekable: track.isSeekable,
-				isStream: track.isStream,
-				uri: track.uri,
-				artworkUrl: track.artworkUrl,
-				sourceName: track.sourceName,
-			},
-			pluginInfo: {},
-		});
-
 		this.manager.db.set(`players.${this.guild}`, {
 			guild: this.guild,
 			voiceChannel: this.voiceChannel,
@@ -622,8 +610,8 @@ export class Player {
 			data: this.data,
 			selfDeafen: this.options.selfDeafen,
 			selfMute: this.options.selfMute,
-			current: this.queue.current ? getTrackInfo(this.queue.current) : null,
-			queue: this.queue.map((track) => getTrackInfo(track)),
+			current: this.queue.current ? this.queue.current.track : null,
+			queue: this.queue.map((track) => track.track),
 		});
 	}
 }

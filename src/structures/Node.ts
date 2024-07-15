@@ -324,14 +324,14 @@ export class Node {
 					if (!previousInfosPlayer.current) return;
 					player.state = "RESUMING";
 
-					let decoded = await this.manager.decodeTrack(previousInfosPlayer.current.encoded);
-					player.queue.add(TrackUtils.build(decoded));
+					let decoded = await this.manager.decodeTrack(previousInfosPlayer.current);
+					player.queue.current = TrackUtils.build(decoded);
 
 					if (!player.playing) await player.play();
 					player.seek(resumedPlayer.state.position);
 
-					previousInfosPlayer.queue.map(async (queue: TrackData) => {
-						decoded = await this.manager.decodeTrack(queue.encoded);
+					previousInfosPlayer.queue.map(async (encoded: string) => {
+						decoded = await this.manager.decodeTrack(encoded);
 						player.queue.add(TrackUtils.build(decoded));
 					});
 
