@@ -235,7 +235,7 @@ export class Manager extends EventEmitter {
 	 */
 	public get leastLoadNodes(): Collection<string, Node> {
 		return this.nodes
-			.filter((node) => node.connected && node.options.playable)
+			.filter((node) => node.connected)
 			.sort((a, b) => {
 				const aload = a.stats.cpu ? (a.stats.cpu.lavalinkLoad / a.stats.cpu.cores) * 100 : 0;
 				const bload = b.stats.cpu ? (b.stats.cpu.lavalinkLoad / b.stats.cpu.cores) * 100 : 0;
@@ -372,7 +372,7 @@ export class Manager extends EventEmitter {
 							duration: playlistData!.tracks.reduce((acc, cur) => acc + (cur.info.length || 0), 0),
 
 							url: playlistData!.pluginInfo.url,
-						}
+					  }
 					: null;
 
 			// Construct the search result
@@ -398,7 +398,8 @@ export class Manager extends EventEmitter {
 	public decodeTracks(tracks: string[]): Promise<TrackData[]> {
 		return new Promise(async (resolve, reject) => {
 			// Get the first available node
-			const node = this.nodes.first();
+			const node = this.nodes.filter((node) => node.connected && node.options.search).size > 0 ? this.nodes.filter((node) => node.connected && node.options.search).first() : this.leastLoadNodes.first();
+			
 			if (!node) throw new Error("No available nodes.");
 
 			// Send a POST request to the node's REST API to decode the tracks

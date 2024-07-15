@@ -353,7 +353,11 @@ export type State =
 	/**
 	 * The node is moving.
 	 */
-	| "MOVING";
+	| "MOVING"
+	/**
+	 * The node is resuming.
+	 */
+	| "RESUMING";
 
 export type PlayerEvents = TrackStartEvent | TrackEndEvent | TrackStuckEvent | TrackExceptionEvent | WebSocketClosedEvent;
 

@@ -257,7 +257,7 @@ export class Player {
 	 * @returns {this} - The player instance.
 	 */
 	public async moveNode(node?: string): Promise<this> {
-		node = node || this.manager.leastLoadNodes.first().options.identifier;
+		node = node || this.manager.leastLoadNodes.first().options.identifier || this.manager.nodes.filter((n) => n.connected).first().options.identifier;
 		if (!this.manager.nodes.has(node)) throw new RangeError("No nodes available.");
 		if (this.node.options.identifier === node) return this;
 
@@ -272,11 +272,13 @@ export class Player {
 		const currentNode = this.node;
 		const destinationNode = this.manager.nodes.get(node);
 
+		const fetchedPlayer: any = await currentNode.rest.get(`/v4/sessions/${currentNode.sessionId}/players/${this.guild}`);
+		if (!fetchedPlayer) return this;
 		await destinationNode.rest.updatePlayer({
 			guildId: this.guild,
 			data: {
 				encodedTrack: this.queue.current?.track,
-				position: this.position,
+				position: fetchedPlayer.track.info.position,
 				volume: this.volume,
 				paused: this.paused,
 				filters: {

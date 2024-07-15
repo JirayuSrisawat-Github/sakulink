@@ -244,7 +244,7 @@ export class Node {
 
 		// Move all players connected to this node to another node
 		this.manager.players
-			.filter((p) => p.node.options.identifier == this.options.identifier)
+			.filter((p) => p.node.options.identifier === this.options.identifier)
 			.forEach((p) => {
 				p.moveNode();
 			});
@@ -301,6 +301,7 @@ export class Node {
 				this.manager.db.set(`sessionId.${this.options.identifier ?? this.options.host.replace(/\./g, "-")}`, this.sessionId);
 
 				if (!this.options.resumeStatus) return;
+
 				this.rest.patch(`/v4/sessions/${this.sessionId}`, {
 					resuming: this.options.resumeStatus,
 					timeout: this.options.resumeTimeout,
@@ -316,17 +317,25 @@ export class Node {
 						volume: previousInfosPlayer.volume,
 						selfDeafen: previousInfosPlayer.selfDeafen,
 						selfMute: previousInfosPlayer.selfMute,
-						data: {},
+						data: previousInfosPlayer.data ?? {},
 					});
 
 					if (player.state !== "CONNECTED") player.connect();
 					if (!previousInfosPlayer.current) return;
-					player.queue.add(TrackUtils.build(previousInfosPlayer.current));
+					player.state = "RESUMING";
+
+					let decoded = await this.manager.decodeTrack(previousInfosPlayer.current.encoded);
+					player.queue.add(TrackUtils.build(decoded));
 
 					if (!player.playing) await player.play();
 					player.seek(resumedPlayer.state.position);
 
-					previousInfosPlayer.queue.map(async (queue: TrackData) => player.queue.add(TrackUtils.build(queue)));
+					previousInfosPlayer.queue.map(async (queue: TrackData) => {
+						decoded = await this.manager.decodeTrack(queue.encoded);
+						player.queue.add(TrackUtils.build(decoded));
+					});
+
+					setTimeout(() => (player.state = "CONNECTED"), 5000);
 				}
 				break;
 			default:
@@ -360,6 +369,7 @@ export class Node {
 				if (player?.nowPlayingMessage && !player?.nowPlayingMessage?.deleted) {
 					player.nowPlayingMessage.delete().catch(() => {});
 				}
+
 				this.trackEnd(player, track as Track, payload);
 				break;
 			case "TrackStuckEvent":
@@ -401,7 +411,7 @@ export class Node {
 	 * @param payload - The payload of the event.
 	 */
 	protected trackEnd(player: Player, track: Track, payload: TrackEndEvent): void {
-		if (player.state === "MOVING") return;
+		if (player.state === "MOVING" || player.state === "RESUMING") return;
 
 		if (["loadFailed", "cleanup"].includes(payload.reason)) {
 			player.queue.previous = player.queue.current;
