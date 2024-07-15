@@ -3,6 +3,7 @@
   <p>Awesome lavalink wrapper for NodeJS user.</p>
   
   <a href="https://sakulink.jirayu.net">Documentation »</a>
+  <a href="https://github.com/JirayuSrisawat-Github/sakulink-example">Example bot »</a>
 </div>
 
 ## Getting Started
@@ -25,12 +26,11 @@ pnpm add sakulink
 bun add sakulink
 ```
 
-## Used in
-
-- [Matsuri](https://discord.com/oauth2/authorize?client_id=1220138350933971035)
-- [สำลี บอทอันดับ 1 ของไท](https://discord.com/oauth2/authorize?client_id=894638419383320577)
+## Need Help?
+Join this [discord server](https://discord.gg/2bhtBJQ4Xz) and create new forum on #help for support.
 
 ## Credits
 
 - [Magmastream](https://github.com/Blackfort-Hosting/magmastream)
-- [ErelaJS](https://github.com/MenuDocs/erela.js/)
+- [Erela.JS](https://github.com/MenuDocs/erela.js/)
+- [Moonlink.JS](https://github.com/Ecliptia/moonlink.js)
