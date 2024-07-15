@@ -14,7 +14,7 @@ export default function nodeCheck(options: NodeOptions): void {
 	}
 
 	// Destructure the options object
-	const { host, identifier, password, port, requestTimeout, resumeStatus, resumeTimeout, retryAmount, retryDelay, secure, playable, search } = options;
+	const { host, identifier, password, port, requestTimeout, retryAmount, retryDelay, secure, playable, search } = options;
 
 	// Check the validity of the host option
 	if (typeof host !== "string" || !/.+/.test(host)) {
@@ -39,16 +39,6 @@ export default function nodeCheck(options: NodeOptions): void {
 	// Check the validity of the requestTimeout option
 	if (typeof requestTimeout !== "undefined" && typeof requestTimeout !== "number") {
 		throw new TypeError('Node option "requestTimeout" must be a number.');
-	}
-
-	// Check the validity of the resumeStatus option
-	if (typeof resumeStatus !== "undefined" && typeof resumeStatus !== "boolean") {
-		throw new TypeError('Node option "resumeStatus" must be a boolean.');
-	}
-
-	// Check the validity of the resumeTimeout option
-	if (typeof resumeTimeout !== "undefined" && typeof resumeTimeout !== "number") {
-		throw new TypeError('Node option "resumeTimeout" must be a number.');
 	}
 
 	// Check the validity of the retryAmount option
