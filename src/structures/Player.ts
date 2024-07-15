@@ -126,7 +126,7 @@ export class Player {
 		if (this.manager.players.has(options.guild)) return this.manager.players.get(options.guild);
 		playerCheck(options);
 		this.guild = options.guild;
-		this.data = options.data;
+		this.data = options.data ?? {};
 		this.voiceState = Object.assign({
 			op: "voiceUpdate",
 			guild_id: options.guild,
@@ -658,7 +658,7 @@ export interface PlayerOptions {
 	/**
 	 * Additional data for the player.
 	 */
-	data: { [k: string]: any };
+	data?: { [k: string]: any };
 }
 
 /**
