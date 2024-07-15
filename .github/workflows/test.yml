@@ -1,0 +1,33 @@
+name: Check Typescript
+
+on:
+  push:
+    branches:
+      - main 
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  test-typescript:
+    name: TypeScript Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/setup-node@v4
+      - uses: oven-sh/setup-bun@v1
+
+      - name: Checkout
+        id: checkout
+        uses: actions/checkout@v4
+
+      - name: Install Dependencies
+        id: bun-install
+        run: bun install
+
+      - name: Build
+        id: ts-build
+        run: bun run build
