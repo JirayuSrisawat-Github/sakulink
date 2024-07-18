@@ -217,6 +217,7 @@ export class Player {
 		this.node.rest.destroyPlayer(this.guild);
 		this.manager.emit("playerDestroy", this);
 		this.manager.players.delete(this.guild);
+		this.manager.db.delete(`players.${this.guild}`)
 		// @ts-expect-error
 		clearInterval(this.interval);
 	}
