@@ -327,6 +327,13 @@ export class Node {
 					let decoded = await this.manager.decodeTrack(previousInfosPlayer.current);
 					player.queue.current = TrackUtils.build(decoded);
 
+					if (resumedPlayer.filters.distortion) player.filters.distortion = resumedPlayer.filters.distortion;
+					if (resumedPlayer.filters.equalizer) player.filters.equalizer = resumedPlayer.filters.equalizer;
+					if (resumedPlayer.filters.karaoke) player.filters.karaoke = resumedPlayer.filters.karaoke;
+					if (resumedPlayer.filters.rotation) player.filters.rotation = resumedPlayer.filters.rotation;
+					if (resumedPlayer.filters.timescale) player.filters.timescale = resumedPlayer.filters.timescale;
+					if (resumedPlayer.filters.vibrato) player.filters.vibrato = resumedPlayer.filters.vibrato;
+					if (resumedPlayer.filters.volume) player.filters.volume = resumedPlayer.filters.volume;
 					player.position = resumedPlayer.state.position;
 					player.playing = true;
 					player.paused = false;
