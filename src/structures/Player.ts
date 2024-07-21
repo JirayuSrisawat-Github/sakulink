@@ -46,7 +46,9 @@ export class Player {
 	 * The current volume of the player.
 	 */
 	public volume: number;
-
+	/**
+	 * Whether the player is in autoplay mode.
+	 */
 	public isAutoplay: boolean = false;
 	/**
 	 * The node the player is connected to.
@@ -406,22 +408,18 @@ export class Player {
 		return this;
 	}
 
-
 	/**
-	 * @param autoplayState
-	 * @param botUser
+	 * Sets the autoplay state.
+	 *
+	 * @param {boolean} state - The autoplay state.
+	 * @returns {this} - The player instance.
 	 */
-	public setAutoplay(autoplayState: boolean, botUser: object) {
-		if (typeof autoplayState !== "boolean") {
-			throw new TypeError("autoplayState must be a boolean.");
+	public setAutoplay(state: boolean): this {
+		if (typeof state !== "boolean") {
+			throw new TypeError('state must be a "true" or "false".');
 		}
 
-		if (typeof botUser !== "object") {
-			throw new TypeError("botUser must be a user-object.");
-		}
-
-		this.isAutoplay = autoplayState;
-		this.set("Internal_BotUser", botUser);
+		this.isAutoplay = state;
 
 		return this;
 	}

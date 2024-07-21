@@ -218,36 +218,43 @@ export class Node {
 		}, this.options.retryDelay);
 	}
 
+	/**
+	 * Handles autoplay for a given player by searching for a mix of the previous track and adding it to the player's queue.
+	 * If the mix search fails, a default mix will be used.
+	 *
+	 * @param {Player} player - The player to handle autoplay for.
+	 * @return {Promise<void>} A promise that resolves when the autoplay is handled.
+	 */
+	private async handleAutoplay(player: Player): Promise<void> {
+		const base = "https://www.youtube.com/watch?v=ArXS-FI3ADo";
+		const getMixUrl = (identifier: string) => `https://www.youtube.com/watch?v=${identifier}&list=RD${identifier}`;
 
-	private async handleAutoplay(player: Player, track: Track) {
-		try {
+		let mixUrl: string;
+		let response: SearchResult;
+		let base_response: SearchResult;
 
-			const previousTrack = player.queue.previous || player.get("previoustrack") || player.queue.current;
-			if (!previousTrack) return player.destroy()
+		const previousTrack = player.queue.previous || player.queue.current;
 
-			let mixURL: string;
-			let response: SearchResult;
-			let res: SearchResult;
-			if (previousTrack.sourceName === "play.chompubot") {
-				mixURL = `https://www.youtube.com/watch?v=${previousTrack.identifier}&list=RD${previousTrack.identifier}`;
-				response = await player.search(mixURL, player.get("Internal_BotUser"));
-			} else {
-				res = await player.search(previousTrack.title + " - " + previousTrack.author, player.get("Internal_BotUser"))
-				mixURL = `https://www.youtube.com/watch?v=${res.tracks[0].identifier}&list=RD${res.tracks[0].identifier}`;
-				response = await player.search(mixURL, player.get("Internal_BotUser"));
-				if (res.loadType == 'error' || res.loadType == 'empty') {
-					res = await player.search("https://www.youtube.com/watch?v=vSdIbW9GS-M", player.get("Internal_BotUser"))
-					mixURL = `https://www.youtube.com/watch?v=${res.tracks[0].identifier}&list=RD${res.tracks[0].identifier}`;
-					response = await player.search(mixURL, player.get("Internal_BotUser"));
-				}
-			}
-			let random = Math.random() * Math.floor(response.playlist.tracks.length)
-			player.queue.add(response.playlist.tracks[Math.floor(random)]);
-			player.play();
+		base_response = await player.search(
+			{
+				query: `${previousTrack.title} - ${previousTrack.author}`,
+				source: "youtube",
+			},
+			player.queue.current.requester,
+		);
 
-		} catch (error) {
-			player.destroy()
+		mixUrl = getMixUrl(previousTrack.sourceName! === "youtube" ? previousTrack.identifier! : base_response.tracks[0].identifier);
+
+		response = await player.search(mixUrl, player.queue.current.requester);
+
+		if (response.loadType === "error" || response.loadType === "empty") {
+			base_response = await player.search(base, player.queue.current.requester);
+			mixUrl = getMixUrl(base_response.tracks[0].identifier);
+			response = await player.search(mixUrl, player.queue.current.requester);
 		}
+
+		player.queue.add(response.tracks.find((track) => track.uri !== player.queue.current.uri));
+		if (!player.playing) player.play();
 	}
 
 	/**
@@ -407,7 +414,7 @@ export class Node {
 			case "TrackEndEvent":
 				// Handle the track end event
 				if (player?.nowPlayingMessage && !player?.nowPlayingMessage?.deleted) {
-					player.nowPlayingMessage.delete().catch(() => { });
+					player.nowPlayingMessage.delete().catch(() => {});
 				}
 
 				this.trackEnd(player, track as Track, payload);
@@ -506,9 +513,8 @@ export class Node {
 	 * @param payload - The payload of the event.
 	 */
 	protected async queueEnd(player: Player, track: Track, payload: TrackEndEvent): Promise<void> {
-		if (player.isAutoplay) {
-			return await this.handleAutoplay(player, track);
-		}
+		if (player.isAutoplay) return await this.handleAutoplay(player);
+
 		player.queue.current = null;
 		player.playing = false;
 		this.manager.emit("queueEnd", player, track, payload);
@@ -544,7 +550,6 @@ export class Node {
 	protected socketClosed(player: Player, payload: WebSocketClosedEvent): void {
 		this.manager.emit("socketClosed", player, payload);
 	}
-
 }
 
 /**
