@@ -78,12 +78,12 @@ export class Database {
 	}
 
 	private getFilePath() {
-		return path.join(__dirname, "../Datastore", `database-${this.id}.json`);
+		return path.join(__dirname, "../datastore", `database-${this.id}.json`);
 	}
 
 	fetch() {
 		try {
-			const directory = path.join(__dirname, "../Datastore");
+			const directory = path.join(__dirname, "../datastore");
 			if (!fs.existsSync(directory)) {
 				fs.mkdirSync(directory, { recursive: true });
 			}
