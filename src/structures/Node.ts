@@ -1,6 +1,6 @@
 /* eslint-disable no-case-declarations */
 import { PlayerEvent, PlayerEvents, Structure, TrackData, TrackEndEvent, TrackExceptionEvent, TrackStartEvent, TrackStuckEvent, TrackUtils, WebSocketClosedEvent } from "./Utils";
-import { Manager } from "./Manager";
+import { Manager, SearchResult } from "./Manager";
 import { Player, Track, UnresolvedTrack } from "./Player";
 import { Rest } from "./Rest";
 import NodeCheck from "../utils/NodeCheck";
@@ -219,6 +219,45 @@ export class Node {
 	}
 
 	/**
+	 * Handles autoplay for a given player by searching for a mix of the previous track and adding it to the player's queue.
+	 * If the mix search fails, a default mix will be used.
+	 *
+	 * @param {Player} player - The player to handle autoplay for.
+	 * @return {Promise<void>} A promise that resolves when the autoplay is handled.
+	 */
+	private async handleAutoplay(player: Player): Promise<void> {
+		const base = "https://www.youtube.com/watch?v=ArXS-FI3ADo";
+		const getMixUrl = (identifier: string) => `https://www.youtube.com/watch?v=${identifier}&list=RD${identifier}`;
+
+		let mixUrl: string;
+		let response: SearchResult;
+		let base_response: SearchResult;
+
+		const previousTrack = player.queue.previous || player.queue.current;
+
+		base_response = await player.search(
+			{
+				query: `${previousTrack.title} - ${previousTrack.author}`,
+				source: "youtube",
+			},
+			player.queue.current.requester,
+		);
+
+		mixUrl = getMixUrl(previousTrack.sourceName! === "youtube" ? previousTrack.identifier! : base_response.tracks[0].identifier);
+
+		response = await player.search(mixUrl, player.queue.current.requester);
+
+		if (response.loadType === "error" || response.loadType === "empty") {
+			base_response = await player.search(base, player.queue.current.requester);
+			mixUrl = getMixUrl(base_response.tracks[0].identifier);
+			response = await player.search(mixUrl, player.queue.current.requester);
+		}
+
+		player.queue.add(response.tracks.find((track) => track.uri !== player.queue.current.uri));
+		if (!player.playing) player.play();
+	}
+
+	/**
 	 * Event handler for the WebSocket "open" event.
 	 */
 	protected open(): void {
@@ -418,7 +457,7 @@ export class Node {
 	 * @param track - The track that ended.
 	 * @param payload - The payload of the event.
 	 */
-	protected trackEnd(player: Player, track: Track, payload: TrackEndEvent): void {
+	protected trackEnd(player: Player, track: Track, payload: TrackEndEvent): Promise<void> {
 		if (player.state === "MOVING" || player.state === "RESUMING") return;
 
 		const { reason } = payload;
@@ -473,7 +512,9 @@ export class Node {
 	 * @param track - The last track in the queue.
 	 * @param payload - The payload of the event.
 	 */
-	protected queueEnd(player: Player, track: Track, payload: TrackEndEvent): void {
+	protected async queueEnd(player: Player, track: Track, payload: TrackEndEvent): Promise<void> {
+		if (player.isAutoplay) return await this.handleAutoplay(player);
+
 		player.queue.current = null;
 		player.playing = false;
 		this.manager.emit("queueEnd", player, track, payload);

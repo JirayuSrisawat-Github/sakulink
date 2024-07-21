@@ -47,6 +47,10 @@ export class Player {
 	 */
 	public volume: number;
 	/**
+	 * Whether the player is in autoplay mode.
+	 */
+	public isAutoplay: boolean = false;
+	/**
 	 * The node the player is connected to.
 	 */
 	public node: Node;
@@ -400,6 +404,22 @@ export class Player {
 
 		// Update the player's volume property.
 		this.volume = volume;
+
+		return this;
+	}
+
+	/**
+	 * Sets the autoplay state.
+	 *
+	 * @param {boolean} state - The autoplay state.
+	 * @returns {this} - The player instance.
+	 */
+	public setAutoplay(state: boolean): this {
+		if (typeof state !== "boolean") {
+			throw new TypeError('state must be a "true" or "false".');
+		}
+
+		this.isAutoplay = state;
 
 		return this;
 	}
