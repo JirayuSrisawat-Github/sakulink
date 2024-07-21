@@ -240,7 +240,7 @@ export class Node {
 				query: `${previousTrack.title} - ${previousTrack.author}`,
 				source: "youtube",
 			},
-			player.queue.current.requester,
+			player.queue.current.requester
 		);
 
 		mixUrl = getMixUrl(previousTrack.sourceName! === "youtube" ? previousTrack.identifier! : base_response.tracks[0].identifier);
@@ -349,6 +349,11 @@ export class Node {
 				const resumedPlayers = <any[]>await this.rest.getAllPlayers();
 				for (const resumedPlayer of resumedPlayers) {
 					const previousInfosPlayer: any = this.manager.db.get(`players.${resumedPlayer.guildId}`) || {};
+					if (!previousInfosPlayer.guild || !previousInfosPlayer.voiceChannel || !previousInfosPlayer.textChannel) {
+						this.manager.db.delete(`players.${resumedPlayer.guildId}`);
+						return;
+					}
+
 					const player = this.manager.create({
 						guild: previousInfosPlayer.guild,
 						voiceChannel: previousInfosPlayer.voiceChannel,
