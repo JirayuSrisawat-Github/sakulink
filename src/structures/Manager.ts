@@ -374,7 +374,7 @@ export class Manager extends EventEmitter {
 							duration: playlistData!.tracks.reduce((acc, cur) => acc + (cur.info.length || 0), 0),
 
 							url: playlistData!.pluginInfo.url,
-					  }
+						}
 					: null;
 
 			// Construct the search result

@@ -414,7 +414,9 @@ export class Node {
 	protected trackEnd(player: Player, track: Track, payload: TrackEndEvent): void {
 		if (player.state === "MOVING" || player.state === "RESUMING") return;
 
-		if (["loadFailed", "cleanup"].includes(payload.reason)) {
+		const { reason } = payload;
+
+		if (["loadFailed", "cleanup"].includes(reason)) {
 			player.queue.previous = player.queue.current;
 			player.queue.current = player.queue.shift();
 
@@ -425,15 +427,18 @@ export class Node {
 
 			this.manager.emit("trackEnd", player, track, payload);
 			if (this.manager.options.autoPlay) player.play();
-		} else if (payload.reason === "replaced") {
+		} else if (reason === "replaced") {
 			this.manager.emit("trackEnd", player, track, payload);
 			player.queue.previous = player.queue.current;
 		} else if (track && (player.trackRepeat || player.queueRepeat)) {
 			const { queue, trackRepeat, queueRepeat } = player;
 			const { autoPlay } = this.manager.options;
 
-			if (trackRepeat) queue.unshift(queue.current);
-			else if (queueRepeat) queue.add(queue.current);
+			if (trackRepeat) {
+				queue.unshift(queue.current);
+			} else if (queueRepeat) {
+				queue.add(queue.current);
+			}
 
 			queue.previous = queue.current;
 			queue.current = queue.shift();
@@ -446,15 +451,13 @@ export class Node {
 			}
 
 			if (autoPlay) player.play();
-		}
+		} else if (player.queue.length) {
+			player.queue.previous = player.queue.current;
+			player.queue.current = player.queue.shift();
 
-		if (!player.queue.length) return this.queueEnd(player, track, payload);
-
-		player.queue.previous = player.queue.current;
-		player.queue.current = player.queue.shift();
-
-		this.manager.emit("trackEnd", player, track, payload);
-		if (this.manager.options.autoPlay) player.play();
+			this.manager.emit("trackEnd", player, track, payload);
+			if (this.manager.options.autoPlay) player.play();
+		} else this.queueEnd(player, track, payload);
 	}
 
 	/**
