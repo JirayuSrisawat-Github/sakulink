@@ -1,6 +1,6 @@
 /* eslint-disable no-case-declarations */
 import { PlayerEvent, PlayerEvents, Structure, TrackData, TrackEndEvent, TrackExceptionEvent, TrackStartEvent, TrackStuckEvent, TrackUtils, WebSocketClosedEvent } from "./Utils";
-import { Manager } from "./Manager";
+import { Manager, SearchResult } from "./Manager";
 import { Player, Track, UnresolvedTrack } from "./Player";
 import { Rest } from "./Rest";
 import NodeCheck from "../utils/NodeCheck";
@@ -218,6 +218,38 @@ export class Node {
 		}, this.options.retryDelay);
 	}
 
+
+	private async handleAutoplay(player: Player, track: Track) {
+		try {
+
+			const previousTrack = player.queue.previous || player.get("previoustrack") || player.queue.current;
+			if (!previousTrack) return player.destroy()
+
+			let mixURL: string;
+			let response: SearchResult;
+			let res: SearchResult;
+			if (previousTrack.sourceName === "play.chompubot") {
+				mixURL = `https://www.youtube.com/watch?v=${previousTrack.identifier}&list=RD${previousTrack.identifier}`;
+				response = await player.search(mixURL, player.get("Internal_BotUser"));
+			} else {
+				res = await player.search(previousTrack.title + " - " + previousTrack.author, player.get("Internal_BotUser"))
+				mixURL = `https://www.youtube.com/watch?v=${res.tracks[0].identifier}&list=RD${res.tracks[0].identifier}`;
+				response = await player.search(mixURL, player.get("Internal_BotUser"));
+				if (res.loadType == 'error' || res.loadType == 'empty') {
+					res = await player.search("https://www.youtube.com/watch?v=vSdIbW9GS-M", player.get("Internal_BotUser"))
+					mixURL = `https://www.youtube.com/watch?v=${res.tracks[0].identifier}&list=RD${res.tracks[0].identifier}`;
+					response = await player.search(mixURL, player.get("Internal_BotUser"));
+				}
+			}
+			let random = Math.random() * Math.floor(response.playlist.tracks.length)
+			player.queue.add(response.playlist.tracks[Math.floor(random)]);
+			player.play();
+
+		} catch (error) {
+			player.destroy()
+		}
+	}
+
 	/**
 	 * Event handler for the WebSocket "open" event.
 	 */
@@ -375,7 +407,7 @@ export class Node {
 			case "TrackEndEvent":
 				// Handle the track end event
 				if (player?.nowPlayingMessage && !player?.nowPlayingMessage?.deleted) {
-					player.nowPlayingMessage.delete().catch(() => {});
+					player.nowPlayingMessage.delete().catch(() => { });
 				}
 
 				this.trackEnd(player, track as Track, payload);
@@ -418,7 +450,7 @@ export class Node {
 	 * @param track - The track that ended.
 	 * @param payload - The payload of the event.
 	 */
-	protected trackEnd(player: Player, track: Track, payload: TrackEndEvent): void {
+	protected trackEnd(player: Player, track: Track, payload: TrackEndEvent): Promise<void> {
 		if (player.state === "MOVING" || player.state === "RESUMING") return;
 
 		const { reason } = payload;
@@ -473,7 +505,10 @@ export class Node {
 	 * @param track - The last track in the queue.
 	 * @param payload - The payload of the event.
 	 */
-	protected queueEnd(player: Player, track: Track, payload: TrackEndEvent): void {
+	protected async queueEnd(player: Player, track: Track, payload: TrackEndEvent): Promise<void> {
+		if (player.isAutoplay) {
+			return await this.handleAutoplay(player, track);
+		}
 		player.queue.current = null;
 		player.playing = false;
 		this.manager.emit("queueEnd", player, track, payload);
@@ -509,6 +544,7 @@ export class Node {
 	protected socketClosed(player: Player, payload: WebSocketClosedEvent): void {
 		this.manager.emit("socketClosed", player, payload);
 	}
+
 }
 
 /**

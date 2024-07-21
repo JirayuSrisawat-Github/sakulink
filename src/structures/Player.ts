@@ -46,6 +46,8 @@ export class Player {
 	 * The current volume of the player.
 	 */
 	public volume: number;
+
+	public isAutoplay: boolean = false;
 	/**
 	 * The node the player is connected to.
 	 */
@@ -400,6 +402,26 @@ export class Player {
 
 		// Update the player's volume property.
 		this.volume = volume;
+
+		return this;
+	}
+
+
+	/**
+	 * @param autoplayState
+	 * @param botUser
+	 */
+	public setAutoplay(autoplayState: boolean, botUser: object) {
+		if (typeof autoplayState !== "boolean") {
+			throw new TypeError("autoplayState must be a boolean.");
+		}
+
+		if (typeof botUser !== "object") {
+			throw new TypeError("botUser must be a user-object.");
+		}
+
+		this.isAutoplay = autoplayState;
+		this.set("Internal_BotUser", botUser);
 
 		return this;
 	}
