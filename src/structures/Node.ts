@@ -327,8 +327,9 @@ export class Node {
 					let decoded = await this.manager.decodeTrack(previousInfosPlayer.current);
 					player.queue.current = TrackUtils.build(decoded);
 
-					if (!player.playing) await player.play();
-					player.seek(resumedPlayer.state.position);
+					player.position = previousInfosPlayer.state.position;
+					player.playing = true;
+					player.paused = false;
 
 					previousInfosPlayer.queue.map(async (encoded: string) => {
 						decoded = await this.manager.decodeTrack(encoded);
