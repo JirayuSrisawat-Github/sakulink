@@ -3,7 +3,7 @@ import { Collection } from "@discordjs/collection";
 import { EventEmitter } from "events";
 import { Node, NodeOptions } from "./Node";
 import { Player, PlayerOptions, Track, UnresolvedTrack } from "./Player";
-import { VoiceState } from "..";
+import { version, VoiceState } from "..";
 import ManagerCheck from "../utils/ManagerCheck";
 import { Database } from "../utils/Database";
 
@@ -266,7 +266,7 @@ export class Manager extends EventEmitter {
 			plugins: [],
 			nodes: [],
 			autoPlay: true,
-			clientName: "sakulink",
+			clientName: `Sakulink/${version} (https://github.com/JirayuSrisawat-Github/sakulink)`,
 			defaultSearchPlatform: "youtube music",
 			autoMove: true,
 			autoResume: true,
