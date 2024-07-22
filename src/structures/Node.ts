@@ -219,45 +219,6 @@ export class Node {
 	}
 
 	/**
-	 * Handles autoplay for a given player by searching for a mix of the previous track and adding it to the player's queue.
-	 * If the mix search fails, a default mix will be used.
-	 *
-	 * @param {Player} player - The player to handle autoplay for.
-	 * @return {Promise<void>} A promise that resolves when the autoplay is handled.
-	 */
-	private async handleAutoplay(player: Player): Promise<void> {
-		const base = "https://www.youtube.com/watch?v=ArXS-FI3ADo";
-		const getMixUrl = (identifier: string) => `https://www.youtube.com/watch?v=${identifier}&list=RD${identifier}`;
-
-		let mixUrl: string;
-		let response: SearchResult;
-		let base_response: SearchResult;
-
-		const previousTrack = player.queue.previous || player.queue.current;
-
-		base_response = await player.search(
-			{
-				query: `${previousTrack.title} - ${previousTrack.author}`,
-				source: "youtube",
-			},
-			player.queue.current.requester
-		);
-
-		mixUrl = getMixUrl(previousTrack.sourceName! === "youtube" ? previousTrack.identifier! : base_response.tracks[0].identifier);
-
-		response = await player.search(mixUrl, player.queue.current.requester);
-
-		if (response.loadType === "error" || response.loadType === "empty") {
-			base_response = await player.search(base, player.queue.current.requester);
-			mixUrl = getMixUrl(base_response.tracks[0].identifier);
-			response = await player.search(mixUrl, player.queue.current.requester);
-		}
-
-		player.queue.add(response.tracks.find((track) => track.uri !== player.queue.current.uri));
-		if (!player.playing) player.play();
-	}
-
-	/**
 	 * Event handler for the WebSocket "open" event.
 	 */
 	protected open(): void {
@@ -518,7 +479,7 @@ export class Node {
 	 * @param payload - The payload of the event.
 	 */
 	protected async queueEnd(player: Player, track: Track, payload: TrackEndEvent): Promise<void> {
-		if (player.isAutoplay) return await this.handleAutoplay(player);
+		if (player.isAutoplay) return await this.handleAutoplay(player, track);
 
 		player.queue.current = null;
 		player.playing = false;
@@ -554,6 +515,49 @@ export class Node {
 	 */
 	protected socketClosed(player: Player, payload: WebSocketClosedEvent): void {
 		this.manager.emit("socketClosed", player, payload);
+	}
+
+	/**
+	 * Handles autoplay for a given player by searching for a mix of the previous track and adding it to the player's queue.
+	 * If the mix search fails, a default mix will be used.
+	 *
+	 * @param {Player} player - The player to handle autoplay for.
+	 * @return {Promise<void>} A promise that resolves when the autoplay is handled.
+	 */
+	private async handleAutoplay(player: Player, track: Track | UnresolvedTrack): Promise<void> {
+		const base = "https://www.youtube.com/watch?v=ArXS-FI3ADo";
+		const getMixUrl = (identifier: string) => `https://www.youtube.com/watch?v=${identifier}&list=RD${identifier}`;
+		const findMix = async (): Promise<SearchResult> => {
+			let mixUrl: string;
+			let response: SearchResult;
+			let base_response: SearchResult;
+
+			const previousTrack = player.queue.previous || player.queue.current || track;
+
+			base_response = await player.search(
+				{
+					query: `${previousTrack.title} - ${previousTrack.author}`,
+					source: "youtube",
+				},
+				player.queue.current.requester
+			);
+
+			mixUrl = getMixUrl(previousTrack.sourceName! === "youtube" ? previousTrack.identifier! : base_response.tracks[0].identifier);
+
+			response = await player.search(mixUrl, player.queue.current.requester);
+
+			if (response.loadType === "error" || response.loadType === "empty") {
+				base_response = await player.search(base, player.queue.current.requester);
+				mixUrl = getMixUrl(base_response.tracks[0].identifier);
+				response = await player.search(mixUrl, player.queue.current.requester);
+			}
+
+			return response;
+		};
+
+		const response = await findMix();
+		player.queue.add(response.playlist!.tracks.find((track) => track.uri !== player.queue.current.uri));
+		player.play();
 	}
 }
 
