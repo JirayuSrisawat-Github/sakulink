@@ -556,7 +556,7 @@ export class Node {
 		};
 
 		const response = await findMix();
-		player.queue.add(response.playlist!.tracks.find((track) => track.uri !== player.queue.current.uri));
+		player.queue.add(response.playlist!.tracks.filter((track) => track.uri !== player.queue.current.uri)[Math.floor(Math.random() * response.playlist!.tracks.length - 1)]);
 		player.play();
 	}
 }
