@@ -31,4 +31,4 @@ export * from "./structures/Rest";
 /**
  * The version of the library.
  */
-export const version = "1.2.1";
+export const version = "1.2.2";
