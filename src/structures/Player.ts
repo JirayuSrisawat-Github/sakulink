@@ -128,6 +128,7 @@ export class Player {
 		if (!this.manager) this.manager = Structure.get("Player")._manager;
 		if (!this.manager) throw new RangeError("Manager has not been initiated.");
 		if (this.manager.players.has(options.guild)) return this.manager.players.get(options.guild);
+		
 		playerCheck(options);
 		this.guild = options.guild;
 		this.data = options.data ?? {};
