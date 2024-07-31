@@ -26,7 +26,8 @@
 	},
 	"homepage": "https://github.com/JirayuSrisawat-Github/sakulink#readme",
 	"devDependencies": {
-		"@types/node": "^22.0.0",
+		"@types/lodash": "^4.17.7",
+		"@types/node": "^20.14.10",
 		"@types/ws": "^8.5.10"
 	},
 	"dependencies": {

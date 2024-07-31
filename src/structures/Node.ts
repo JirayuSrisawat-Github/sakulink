@@ -302,13 +302,14 @@ export class Node {
 
 				if (!this.manager.options.autoResume) return;
 
-				this.rest.patch(`/v4/sessions/${this.sessionId}`, {
+				await this.rest.patch(`/v4/sessions/${this.sessionId}`, {
 					resuming: true,
 					timeout: 360,
 				});
 
 				const resumedPlayers = <any[]>await this.rest.getAllPlayers();
 				for (const resumedPlayer of resumedPlayers) {
+					if (this.manager.players["get"](resumedPlayer.guildId)) return;
 					const previousInfosPlayer: any = this.manager.db.get(`players.${resumedPlayer.guildId}`) || {};
 					if (!previousInfosPlayer.guild || !previousInfosPlayer.voiceChannel || !previousInfosPlayer.textChannel) {
 						this.manager.db.delete(`players.${resumedPlayer.guildId}`);
@@ -325,30 +326,27 @@ export class Node {
 						data: previousInfosPlayer.data ?? {},
 					});
 
-					if (player.state !== "CONNECTED") player.connect();
 					if (!previousInfosPlayer.current) return;
 					player.state = "RESUMING";
 
-					let decoded = await this.manager.decodeTrack(previousInfosPlayer.current);
-					player.queue.current = TrackUtils.build(decoded);
-
-					if (resumedPlayer.filters.distortion) player.filters.distortion = resumedPlayer.filters.distortion;
-					if (resumedPlayer.filters.equalizer) player.filters.equalizer = resumedPlayer.filters.equalizer;
-					if (resumedPlayer.filters.karaoke) player.filters.karaoke = resumedPlayer.filters.karaoke;
-					if (resumedPlayer.filters.rotation) player.filters.rotation = resumedPlayer.filters.rotation;
-					if (resumedPlayer.filters.timescale) player.filters.timescale = resumedPlayer.filters.timescale;
-					if (resumedPlayer.filters.vibrato) player.filters.vibrato = resumedPlayer.filters.vibrato;
-					if (resumedPlayer.filters.volume) player.filters.volume = resumedPlayer.filters.volume;
-					player.position = resumedPlayer.state.position;
+					let decoded = await this.manager.decodeTracks(previousInfosPlayer.queue.map((e: string) => e).concat(previousInfosPlayer.current));
+					player.queue.add(TrackUtils.build(decoded.find((t) => t.encoded === previousInfosPlayer.current)));
+					if (previousInfosPlayer.queue.length > 1) player.queue.add(decoded.filter((t) => t.encoded !== previousInfosPlayer.current).map((trackData) => TrackUtils.build(trackData)));
+					player.filters.distortion = resumedPlayer.filters.distortion;
+					player.filters.equalizer = resumedPlayer.filters.equalizer;
+					player.filters.karaoke = resumedPlayer.filters.karaoke;
+					player.filters.rotation = resumedPlayer.filters.rotation;
+					player.filters.timescale = resumedPlayer.filters.timescale;
+					player.filters.vibrato = resumedPlayer.filters.vibrato;
+					player.filters.volume = resumedPlayer.filters.volume;
 					player.playing = true;
 					player.paused = false;
-
-					previousInfosPlayer.queue.map(async (encoded: string) => {
-						decoded = await this.manager.decodeTrack(encoded);
-						player.queue.add(TrackUtils.build(decoded));
-					});
-
-					setTimeout(() => (player.state = "CONNECTED"), 5000);
+					player.volume = resumedPlayer.volume;
+					player.position = resumedPlayer.state.position;
+					await player.filters.updateFilters();
+					await player.play();
+					player.seek(resumedPlayer.state.position);
+					player.connect();
 				}
 				break;
 			default:
@@ -383,6 +381,7 @@ export class Node {
 					player.nowPlayingMessage.delete().catch(() => {});
 				}
 
+				player.save()
 				this.trackEnd(player, track as Track, payload);
 				break;
 			case "TrackStuckEvent":
@@ -479,10 +478,11 @@ export class Node {
 	 * @param payload - The payload of the event.
 	 */
 	protected async queueEnd(player: Player, track: Track, payload: TrackEndEvent): Promise<void> {
+		player.queue.current = null;
+		player.playing = player.isAutoplay;
+
 		if (player.isAutoplay) return await this.handleAutoplay(player, track);
 
-		player.queue.current = null;
-		player.playing = false;
 		this.manager.emit("queueEnd", player, track, payload);
 	}
 
@@ -532,31 +532,32 @@ export class Node {
 			let response: SearchResult;
 			let base_response: SearchResult;
 
-			const previousTrack = player.queue.previous || player.queue.current || track;
+			const previousTrack = player.queue.previous || track;
 
 			base_response = await player.search(
 				{
 					query: `${previousTrack.title} - ${previousTrack.author}`,
 					source: "youtube",
 				},
-				player.queue.current.requester
+				previousTrack.requester
 			);
 
 			mixUrl = getMixUrl(previousTrack.sourceName! === "youtube" ? previousTrack.identifier! : base_response.tracks[0].identifier);
 
-			response = await player.search(mixUrl, player.queue.current.requester);
+			response = await player.search(mixUrl, previousTrack.requester);
 
 			if (response.loadType === "error" || response.loadType === "empty") {
-				base_response = await player.search(base, player.queue.current.requester);
+				base_response = await player.search(base, previousTrack.requester);
 				mixUrl = getMixUrl(base_response.tracks[0].identifier);
-				response = await player.search(mixUrl, player.queue.current.requester);
+				response = await player.search(mixUrl, previousTrack.requester);
 			}
 
 			return response;
 		};
 
 		const response = await findMix();
-		player.queue.add(response.playlist!.tracks.filter((track) => track.uri !== player.queue.current.uri)[Math.floor(Math.random() * response.playlist!.tracks.length - 1)]);
+		console.log(response.playlist!.tracks.filter((t) => t.uri !== track.uri)[Math.floor(Math.random() * response.playlist!.tracks.length - 1)])
+		player.queue.add(response.playlist!.tracks.filter((t) => t.uri !== track.uri)[Math.floor(Math.random() * response.playlist!.tracks.length - 1)]);
 		player.play();
 	}
 }

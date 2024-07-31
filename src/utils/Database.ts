@@ -48,11 +48,9 @@ export class Database {
 		const lastKey: string = keys.pop() || "";
 		let currentObj: Data = this.data;
 
-		keys.forEach((k) => {
-			if (typeof currentObj[k] === "object") return;
-			currentObj = currentObj[k];
-
-			throw new Error(`Key path "${key}" does not exist`);
+		keys.map((k) => {
+			if (typeof currentObj[k] === "object") currentObj = currentObj[k];
+			else throw new Error(`Key path "${key}" does not exist`);
 		});
 
 		if (currentObj && lastKey in currentObj) {
@@ -104,7 +102,7 @@ export class Database {
 	private save() {
 		try {
 			const filePath = this.getFilePath();
-			fs.writeFileSync(filePath, JSON.stringify(this.data, null, 2));
+			fs.writeFileSync(filePath, JSON.stringify(this.data));
 		} catch (error) {
 			throw new Error("Failed to save data");
 		}

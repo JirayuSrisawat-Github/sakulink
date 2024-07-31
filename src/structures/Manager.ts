@@ -4,8 +4,8 @@ import { EventEmitter } from "events";
 import { Node, NodeOptions } from "./Node";
 import { Player, PlayerOptions, Track, UnresolvedTrack } from "./Player";
 import { version, VoiceState } from "..";
-import ManagerCheck from "../utils/ManagerCheck";
 import { Database } from "../utils/Database";
+import ManagerCheck from "../utils/ManagerCheck";
 
 /**
  * The list of keys that are required in all events.
