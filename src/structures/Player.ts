@@ -92,7 +92,6 @@ export class Player {
 	public readonly data: Record<string, unknown> = {};
 	private static _manager: Manager;
 	private dynamicLoopInterval: NodeJS.Timeout;
-	private interval: NodeJS.Timer;
 
 	/**
 	 * Sets a custom data value for the player.
@@ -128,7 +127,7 @@ export class Player {
 		if (!this.manager) this.manager = Structure.get("Player")._manager;
 		if (!this.manager) throw new RangeError("Manager has not been initiated.");
 		if (this.manager.players.has(options.guild)) return this.manager.players.get(options.guild);
-		
+
 		playerCheck(options);
 		this.guild = options.guild;
 		this.data = options.data ?? {};
@@ -145,8 +144,6 @@ export class Player {
 		this.manager.emit("playerCreate", this);
 		this.volume = options.volume ?? 80;
 		this.filters = new Filters(this);
-
-		this.interval = setInterval(() => this.save(), 1000 * 5);
 	}
 
 	/**
@@ -223,8 +220,6 @@ export class Player {
 		this.manager.emit("playerDestroy", this);
 		this.manager.players.delete(this.guild);
 		this.manager.db.delete(`players.${this.guild}`);
-		// @ts-expect-error
-		clearInterval(this.interval);
 	}
 
 	/**
@@ -270,7 +265,7 @@ export class Player {
 		const destroyOldNode = async (node: Node) => {
 			this.state = "MOVING";
 
-			if (this.manager.nodes.get(node.options.identifier).connected) await node.rest.destroyPlayer(this.guild);
+			if (this.manager.nodes.get(node.options.identifier) && this.manager.nodes.get(node.options.identifier).connected) await node.rest.destroyPlayer(this.guild);
 
 			setTimeout(() => (this.state = "CONNECTED"), 5000);
 		};
@@ -302,6 +297,7 @@ export class Player {
 				},
 			},
 		});
+
 		await destinationNode.rest.updatePlayer({
 			guildId: this.guild,
 			data: {
@@ -635,6 +631,7 @@ export class Player {
 			data: this.data,
 			selfDeafen: this.options.selfDeafen,
 			selfMute: this.options.selfMute,
+			isAutoplay: this.isAutoplay,
 			current: this.queue.current ? this.queue.current.track : null,
 			queue: this.queue.map((track) => track.track),
 		});

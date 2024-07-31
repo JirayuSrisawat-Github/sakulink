@@ -88,7 +88,7 @@ export class Filters {
 	 * Updates the player's filters with the current filter properties.
 	 * @returns The updated Filters instance.
 	 */
-	private async updateFilters(): Promise<this> {
+	public async updateFilters(): Promise<this> {
 		const { distortion, equalizer, karaoke, rotation, timescale, vibrato, volume } = this;
 
 		await this.player.node.rest.updatePlayer({

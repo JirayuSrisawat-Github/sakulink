@@ -326,33 +326,27 @@ export class Node {
 						data: previousInfosPlayer.data ?? {},
 					});
 
-					player.connect();
 					if (!previousInfosPlayer.current) return;
 					player.state = "RESUMING";
 
-					let decoded = await this.manager.decodeTrack(previousInfosPlayer.current);
-					player.queue.current = TrackUtils.build(decoded);
-
-					previousInfosPlayer.queue.map(async (encoded: string) => {
-						decoded = await this.manager.decodeTrack(encoded);
-						player.queue.add(TrackUtils.build(decoded));
-					});
-
-					await player.node.rest.updatePlayer({
-						guildId: resumedPlayer.guildId,
-						data: {
-							encodedTrack: decoded.encoded,
-							volume: resumedPlayer.volume,
-							position: resumedPlayer.state.position,
-							filters: resumedPlayer.filters,
-						},
-					});
-
+					let decoded = await this.manager.decodeTracks(previousInfosPlayer.queue.map((e: string) => e).concat(previousInfosPlayer.current));
+					player.queue.add(TrackUtils.build(decoded.find((t) => t.encoded === previousInfosPlayer.current)));
+					if (previousInfosPlayer.queue.length > 1) player.queue.add(decoded.filter((t) => t.encoded !== previousInfosPlayer.current).map((trackData) => TrackUtils.build(trackData)));
+					player.filters.distortion = resumedPlayer.filters.distortion;
+					player.filters.equalizer = resumedPlayer.filters.equalizer;
+					player.filters.karaoke = resumedPlayer.filters.karaoke;
+					player.filters.rotation = resumedPlayer.filters.rotation;
+					player.filters.timescale = resumedPlayer.filters.timescale;
+					player.filters.vibrato = resumedPlayer.filters.vibrato;
+					player.filters.volume = resumedPlayer.filters.volume;
 					player.playing = true;
 					player.paused = false;
+					player.volume = resumedPlayer.volume;
 					player.position = resumedPlayer.state.position;
-
-					setTimeout(() => (player.state = "CONNECTED"), 5000);
+					await player.filters.updateFilters();
+					await player.play();
+					player.seek(resumedPlayer.state.position);
+					player.connect();
 				}
 				break;
 			default:
@@ -387,6 +381,7 @@ export class Node {
 					player.nowPlayingMessage.delete().catch(() => {});
 				}
 
+				player.save()
 				this.trackEnd(player, track as Track, payload);
 				break;
 			case "TrackStuckEvent":
@@ -483,10 +478,11 @@ export class Node {
 	 * @param payload - The payload of the event.
 	 */
 	protected async queueEnd(player: Player, track: Track, payload: TrackEndEvent): Promise<void> {
+		player.queue.current = null;
+		player.playing = player.isAutoplay;
+
 		if (player.isAutoplay) return await this.handleAutoplay(player, track);
 
-		player.queue.current = null;
-		player.playing = false;
 		this.manager.emit("queueEnd", player, track, payload);
 	}
 
@@ -536,31 +532,32 @@ export class Node {
 			let response: SearchResult;
 			let base_response: SearchResult;
 
-			const previousTrack = player.queue.previous || player.queue.current || track;
+			const previousTrack = player.queue.previous || track;
 
 			base_response = await player.search(
 				{
 					query: `${previousTrack.title} - ${previousTrack.author}`,
 					source: "youtube",
 				},
-				player.queue.current.requester
+				previousTrack.requester
 			);
 
 			mixUrl = getMixUrl(previousTrack.sourceName! === "youtube" ? previousTrack.identifier! : base_response.tracks[0].identifier);
 
-			response = await player.search(mixUrl, player.queue.current.requester);
+			response = await player.search(mixUrl, previousTrack.requester);
 
 			if (response.loadType === "error" || response.loadType === "empty") {
-				base_response = await player.search(base, player.queue.current.requester);
+				base_response = await player.search(base, previousTrack.requester);
 				mixUrl = getMixUrl(base_response.tracks[0].identifier);
-				response = await player.search(mixUrl, player.queue.current.requester);
+				response = await player.search(mixUrl, previousTrack.requester);
 			}
 
 			return response;
 		};
 
 		const response = await findMix();
-		player.queue.add(response.playlist!.tracks.filter((track) => track.uri !== player.queue.current.uri)[Math.floor(Math.random() * response.playlist!.tracks.length - 1)]);
+		console.log(response.playlist!.tracks.filter((t) => t.uri !== track.uri)[Math.floor(Math.random() * response.playlist!.tracks.length - 1)])
+		player.queue.add(response.playlist!.tracks.filter((t) => t.uri !== track.uri)[Math.floor(Math.random() * response.playlist!.tracks.length - 1)]);
 		player.play();
 	}
 }
