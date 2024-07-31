@@ -3,7 +3,7 @@ import { Manager, SearchQuery, SearchResult } from "./Manager";
 import { Node } from "./Node";
 import { Queue } from "./Queue";
 import { Sizes, State, Structure, TrackUtils, VoiceState } from "./Utils";
-import * as _ from "lodash";
+import _ from "lodash";
 import playerCheck from "../utils/PlayerCheck";
 
 /**
