@@ -556,7 +556,6 @@ export class Node {
 		};
 
 		const response = await findMix();
-		console.log(response.playlist!.tracks.filter((t) => t.uri !== track.uri)[Math.floor(Math.random() * response.playlist!.tracks.length - 1)])
 		player.queue.add(response.playlist!.tracks.filter((t) => t.uri !== track.uri)[Math.floor(Math.random() * response.playlist!.tracks.length - 1)]);
 		player.play();
 	}
