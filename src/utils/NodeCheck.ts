@@ -14,7 +14,7 @@ export default function nodeCheck(options: NodeOptions): void {
 	}
 
 	// Destructure the options object
-	const { host, identifier, password, port, requestTimeout, retryAmount, retryDelay, secure, playable, search } = options;
+	const { host, identifier, password, port, requestTimeout, retryAmount, retryDelay, secure, playback, search } = options;
 
 	// Check the validity of the host option
 	if (typeof host !== "string" || !/.+/.test(host)) {
@@ -61,8 +61,8 @@ export default function nodeCheck(options: NodeOptions): void {
 		throw new TypeError('Node option "search" must be a boolean.');
 	}
 
-	// Check the validity of the playable option
-	if (typeof playable !== "undefined" && typeof playable !== "boolean") {
-		throw new TypeError('Node option "playable" must be a boolean.');
+	// Check the validity of the playback option
+	if (typeof playback !== "undefined" && typeof playback !== "boolean") {
+		throw new TypeError('Node option "playback" must be a boolean.');
 	}
 }

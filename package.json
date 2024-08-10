@@ -1,6 +1,6 @@
 {
 	"name": "sakulink",
-	"version": "1.2.3",
+	"version": "1.2.5",
 	"description": "NodeJS Lavalink client",
 	"main": "@dist/index.js",
 	"files": [
@@ -27,13 +27,13 @@
 	"homepage": "https://github.com/JirayuSrisawat-Github/sakulink#readme",
 	"devDependencies": {
 		"@types/lodash": "^4.17.7",
-		"@types/node": "^20.14.10",
-		"@types/ws": "^8.5.10"
+		"@types/node": "^22.2.0",
+		"@types/ws": "^8.5.12"
 	},
 	"dependencies": {
 		"@discordjs/collection": "^2.1.0",
-		"axios": "^1.7.2",
+		"axios": "^1.7.3",
 		"lodash": "^4.17.21",
-		"typescript": "^5.5.3"
+		"typescript": "^5.5.4"
 	}
 }

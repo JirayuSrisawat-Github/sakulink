@@ -100,7 +100,7 @@ export class Node {
 			retryAmount: Infinity,
 			retryDelay: 50,
 			search: true,
-			playable: true,
+			playback: true,
 			...options,
 		};
 
@@ -493,7 +493,6 @@ export class Node {
 	 * @param payload - The payload of the event.
 	 */
 	protected trackStuck(player: Player, track: Track, payload: TrackStuckEvent): void {
-		player.destroy();
 		this.manager.emit("trackStuck", player, track, payload);
 	}
 
@@ -504,7 +503,6 @@ export class Node {
 	 * @param payload - The payload of the event.
 	 */
 	protected trackError(player: Player, track: Track | UnresolvedTrack, payload: TrackExceptionEvent): void {
-		player.destroy();
 		this.manager.emit("trackError", player, track, payload);
 	}
 
@@ -611,9 +609,9 @@ export interface NodeOptions {
 	search?: boolean;
 
 	/**
-	 * Whether to enable the playable check.
+	 * Whether to enable the playback.
 	 */
-	playable?: boolean;
+	playback?: boolean;
 }
 
 /**
