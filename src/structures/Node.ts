@@ -127,7 +127,7 @@ export class Node {
 		this.manager.emit("nodeCreate", this);
 
 		// Create a new REST client for the node
-		if (this.options.version === 'v4') this.rest = new V4RestHandler(this);
+		if (this.options.version === "v4") this.rest = new V4RestHandler(this);
 		else this.rest = new V3RestHandler(this);
 	}
 
@@ -327,6 +327,7 @@ export class Node {
 						selfDeafen: previousInfosPlayer.selfDeafen,
 						selfMute: previousInfosPlayer.selfMute,
 						data: previousInfosPlayer.data ?? {},
+						node: this.options.identifier,
 					});
 
 					if (!previousInfosPlayer.current) return;
