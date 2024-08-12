@@ -1,10 +1,11 @@
 /* eslint-disable no-case-declarations */
-import { PlayerEvent, PlayerEvents, Structure, TrackData, TrackEndEvent, TrackExceptionEvent, TrackStartEvent, TrackStuckEvent, TrackUtils, WebSocketClosedEvent } from "./Utils";
+import { PlayerEvent, PlayerEvents, Structure, TrackEndEvent, TrackExceptionEvent, TrackStartEvent, TrackStuckEvent, TrackUtils, WebSocketClosedEvent } from "./Utils";
 import { Manager, SearchResult } from "./Manager";
 import { Player, Track, UnresolvedTrack } from "./Player";
-import { Rest } from "./Rest";
 import NodeCheck from "../utils/NodeCheck";
 import WebSocket from "ws";
+import { V4RestHandler } from "./rest/V4RestHandler";
+import { V3RestHandler } from "./rest/V3RestHandler";
 
 /**
  * Represents a Lavalink node.
@@ -13,7 +14,7 @@ export class Node {
 	/**
 	 * The REST client for the node.
 	 */
-	public readonly rest: Rest;
+	public readonly rest: V4RestHandler | V3RestHandler;
 
 	/**
 	 * The manager instance of the node.
@@ -101,6 +102,7 @@ export class Node {
 			retryDelay: 50,
 			search: true,
 			playback: true,
+			version: "v4",
 			...options,
 		};
 
@@ -125,7 +127,8 @@ export class Node {
 		this.manager.emit("nodeCreate", this);
 
 		// Create a new REST client for the node
-		this.rest = new Rest(this);
+		if (this.options.version === 'v4') this.rest = new V4RestHandler(this);
+		else this.rest = new V3RestHandler(this);
 	}
 
 	/**
@@ -148,7 +151,7 @@ export class Node {
 		if (this.manager.options.autoResume && sessionId) headers["Session-Id"] = sessionId;
 
 		// Create a new WebSocket connection
-		this.socket = new WebSocket(`ws${this.options.secure ? "s" : ""}://${this.address}/v4/websocket`, { headers });
+		this.socket = new WebSocket(`ws${this.options.secure ? "s" : ""}://${this.address}/${this.options.version}/websocket`, { headers });
 
 		// Set up event listeners for the WebSocket connection
 		this.socket.on("open", this.open.bind(this));
@@ -302,7 +305,7 @@ export class Node {
 
 				if (!this.manager.options.autoResume) return;
 
-				await this.rest.patch(`/v4/sessions/${this.sessionId}`, {
+				await this.rest.patch(`/${this.options.version}/sessions/${this.sessionId}`, {
 					resuming: true,
 					timeout: 360,
 				});
@@ -381,7 +384,7 @@ export class Node {
 					player.nowPlayingMessage.delete().catch(() => {});
 				}
 
-				player.save()
+				player.save();
 				this.trackEnd(player, track as Track, payload);
 				break;
 			case "TrackStuckEvent":
@@ -612,6 +615,11 @@ export interface NodeOptions {
 	 * Whether to enable the playback.
 	 */
 	playback?: boolean;
+
+	/**
+	 * The version of the Node.
+	 */
+	version?: "v4" | "v3";
 }
 
 /**

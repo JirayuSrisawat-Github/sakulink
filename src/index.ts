@@ -24,11 +24,6 @@ export * from "./structures/Queue";
 export * from "./structures/Utils";
 
 /**
- * Exports the Rest class.
- */
-export * from "./structures/Rest";
-
-/**
  * The version of the library.
  */
-export const version = "1.2.3";
+export const version = "1.2.6";

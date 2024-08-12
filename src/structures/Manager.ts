@@ -339,7 +339,7 @@ export class Manager extends EventEmitter {
 
 		try {
 			// Send a GET request to the node's REST API to search for tracks
-			const res = (await node.rest.get(`/v4/loadtracks?identifier=${encodeURIComponent(search)}`)) as LavalinkResponse;
+			const res = (await node.rest.get(`/${node.options.version}/loadtracks?identifier=${encodeURIComponent(search)}`)) as LavalinkResponse;
 
 			if (!res) {
 				throw new Error("Query not found.");
@@ -406,7 +406,7 @@ export class Manager extends EventEmitter {
 			if (!node) throw new Error("No available nodes.");
 
 			// Send a POST request to the node's REST API to decode the tracks
-			const res = (await node.rest.post("/v4/decodetracks", JSON.stringify(tracks)).catch((err) => reject(err))) as TrackData[];
+			const res = (await node.rest.post(`/${node.options.version}/decodetracks`, JSON.stringify(tracks)).catch((err) => reject(err))) as TrackData[];
 
 			if (!res) {
 				return reject(new Error("No data returned from query."));

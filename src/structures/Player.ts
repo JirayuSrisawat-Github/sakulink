@@ -275,7 +275,7 @@ export class Player {
 		let position = this.position;
 
 		if (currentNode.connected) {
-			const fetchedPlayer: any = await currentNode.rest.get(`/v4/sessions/${currentNode.sessionId}/players/${this.guild}`);
+			const fetchedPlayer: any = await currentNode.rest.get(`/v3/sessions/${currentNode.sessionId}/players/${this.guild}`);
 			position = fetchedPlayer.track.info.position;
 		}
 

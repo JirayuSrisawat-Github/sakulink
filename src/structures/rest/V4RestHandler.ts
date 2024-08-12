@@ -1,10 +1,10 @@
-import { Node } from "./Node";
+import { Node } from "../Node";
 import axios, { AxiosRequestConfig } from "axios";
 
 /**
  * This class handles all the HTTP requests to the Lavalink node.
  */
-export class Rest {
+export class V4RestHandler {
 	/**
 	 * The Lavalink node that created this instance.
 	 */
