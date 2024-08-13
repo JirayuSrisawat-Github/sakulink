@@ -298,27 +298,40 @@ export class Node {
 				this.handleEvent(payload);
 				break;
 			case "ready":
-				// Set the session ID and resume the session if necessary
+				// Set the session ID
 				this.rest.setSessionId(payload.sessionId);
 				this.sessionId = payload.sessionId;
-				this.manager.db.set(`sessionId.${this.options.identifier ?? this.options.host.replace(/\./g, "-")}`, this.sessionId);
+
+				// Store the session ID in the database
+				const identifier = this.options.identifier ?? this.options.host.replace(/\./g, "-");
+				this.manager.db.set(`sessionId.${identifier}`, this.sessionId);
 
 				if (!this.manager.options.autoResume) return;
 
+				// Resume the session
 				await this.rest.patch(`/${this.options.version}/sessions/${this.sessionId}`, {
 					resuming: true,
 					timeout: 360,
 				});
 
+				// Get all players that were resumed
 				const resumedPlayers = <any[]>await this.rest.getAllPlayers();
+
+				// Resume each player
 				for (const resumedPlayer of resumedPlayers) {
+					// If the player is already active, skip it
 					if (this.manager.players["get"](resumedPlayer.guildId)) return;
+
+					// Get previous player information from the database
 					const previousInfosPlayer: any = this.manager.db.get(`players.${resumedPlayer.guildId}`) || {};
+
+					// If the previous player information is missing required data, delete it from the database and skip it
 					if (!previousInfosPlayer.guild || !previousInfosPlayer.voiceChannel || !previousInfosPlayer.textChannel) {
 						this.manager.db.delete(`players.${resumedPlayer.guildId}`);
 						return;
 					}
 
+					// Create a new player with the previous player information
 					const player = this.manager.create({
 						guild: previousInfosPlayer.guild,
 						voiceChannel: previousInfosPlayer.voiceChannel,
@@ -330,12 +343,24 @@ export class Node {
 						node: this.options.identifier,
 					});
 
+					// If the player was not playing anything, skip it
 					if (!previousInfosPlayer.current) return;
+
+					// Set the player's state to resuming
 					player.state = "RESUMING";
 
+					// Decode the tracks that were previously in the player's queue
 					let decoded = await this.manager.decodeTracks(previousInfosPlayer.queue.map((e: string) => e).concat(previousInfosPlayer.current));
+
+					// Add the current track to the player's queue
 					player.queue.add(TrackUtils.build(decoded.find((t) => t.encoded === previousInfosPlayer.current)));
-					if (previousInfosPlayer.queue.length > 1) player.queue.add(decoded.filter((t) => t.encoded !== previousInfosPlayer.current).map((trackData) => TrackUtils.build(trackData)));
+
+					// Add the remaining tracks to the player's queue
+					if (previousInfosPlayer.queue.length > 0) {
+						player.queue.add(decoded.filter((t) => t.encoded !== previousInfosPlayer.current).map((trackData) => TrackUtils.build(trackData)));
+					}
+
+					// Set the player's filters to the resumed player's filters
 					player.filters.distortion = resumedPlayer.filters.distortion;
 					player.filters.equalizer = resumedPlayer.filters.equalizer;
 					player.filters.karaoke = resumedPlayer.filters.karaoke;
@@ -343,14 +368,35 @@ export class Node {
 					player.filters.timescale = resumedPlayer.filters.timescale;
 					player.filters.vibrato = resumedPlayer.filters.vibrato;
 					player.filters.volume = resumedPlayer.filters.volume;
-					player.playing = true;
-					player.paused = false;
+
+					// Set the player's volume to the resumed player's volume
 					player.volume = resumedPlayer.volume;
+
+					// Set the player's position to the resumed player's position
 					player.position = resumedPlayer.state.position;
-					await player.filters.updateFilters();
-					await player.play();
-					player.seek(resumedPlayer.state.position);
+
+					// Connect the player to the voice channel
 					player.connect();
+
+					// Update the player on the Lavalink node with the resumed player's information
+					await player.node.rest.updatePlayer({
+						guildId: player.guild,
+						data: {
+							encodedTrack: player.queue.current?.track,
+							volume: player.volume,
+							position: resumedPlayer.state.position,
+							paused: player.paused,
+							filters: {
+								distortion: player.filters.distortion,
+								equalizer: player.filters.equalizer,
+								karaoke: player.filters.karaoke,
+								rotation: player.filters.rotation,
+								timescale: player.filters.timescale,
+								vibrato: player.filters.vibrato,
+								volume: player.filters.volume,
+							},
+						},
+					});
 				}
 				break;
 			default:
