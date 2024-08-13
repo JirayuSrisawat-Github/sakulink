@@ -99,7 +99,7 @@ export class Node {
 			password: "youshallnotpass",
 			secure: false,
 			retryAmount: Infinity,
-			retryDelay: 50,
+			retryDelay: 1000,
 			search: true,
 			playback: true,
 			version: "v4",
