@@ -57,6 +57,11 @@ export class Node {
 	private reconnectAttempts = 1;
 
 	/**
+	 * The timestamp of the last message sent to the node.
+	 */
+	private lastWSMessage: number = 0;
+
+	/**
 	 * Indicates whether the node is connected.
 	 */
 	public get connected(): boolean {
@@ -129,6 +134,13 @@ export class Node {
 		// Create a new REST client for the node
 		if (this.options.version === "v4") this.rest = new V4RestHandler(this);
 		else this.rest = new V3RestHandler(this);
+
+		setInterval(() => {
+			if (this.connected && this.lastWSMessage + 300000 < Date.now()) {
+				this.destroy();
+				this.manager.createNode(this.options);
+			}
+		}, 12000)
 	}
 
 	/**
@@ -281,6 +293,8 @@ export class Node {
 
 		// Emit the "nodeRaw" event
 		this.manager.emit("nodeRaw", payload);
+
+		this.lastWSMessage = Date.now();
 
 		switch (payload.op) {
 			case "stats":
