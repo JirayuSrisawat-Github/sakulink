@@ -138,7 +138,7 @@ export class Node {
 		setInterval(() => {
 			if (this.connected && this.lastWSMessage + 300000 < Date.now()) {
 				this.destroy();
-				this.manager.createNode(this.options);
+				this.manager.createNode(this.options).connect();
 			}
 		}, 12000)
 	}
