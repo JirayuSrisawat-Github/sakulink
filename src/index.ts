@@ -26,4 +26,4 @@ export * from "./structures/Utils";
 /**
  * The version of the library.
  */
-export const version = "1.2.10";
+export const version = "1.2.11";
