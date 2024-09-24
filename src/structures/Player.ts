@@ -258,7 +258,11 @@ export class Player {
 	 * @returns {this} - The player instance.
 	 */
 	public async moveNode(node?: string): Promise<this> {
-		node = node || this.manager.leastLoadNodes.first().options.identifier || this.manager.nodes.filter((n) => n.connected).first().options.identifier;
+		if (node) node = node;
+		else node = this.manager.leastLoadNodes.filter((node) => node.options.playback).first()?.options.identifier;
+
+		if (!node) this.destroy();
+
 		if (!this.manager.nodes.has(node)) throw new RangeError("No nodes available.");
 		if (this.node.options.identifier === node) return this;
 

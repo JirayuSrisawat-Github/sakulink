@@ -140,7 +140,7 @@ export class Node {
 				this.destroy();
 				this.manager.createNode(this.options).connect();
 			}
-		}, 12000)
+		}, 12000);
 	}
 
 	/**
@@ -183,7 +183,12 @@ export class Node {
 		const players = this.manager.players.filter((p) => p.node == this);
 
 		// Destroy all players connected to this node
-		if (players.size) players.forEach((p) => p.destroy());
+		if (players.size) {
+			players.map((p) => {
+				if (this.manager.options.autoMove) p.moveNode();
+				else p.destroy();
+			});
+		}
 
 		// Close the WebSocket connection
 		this.socket?.close(1000, "destroy");
